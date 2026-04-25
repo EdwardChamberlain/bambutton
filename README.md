@@ -1,4 +1,4 @@
-# Bambuddy Despatch Button
+# Bambuddy Plate Clear Button
 
 A physical one-button plate-clear control for Bambuddy.
 
