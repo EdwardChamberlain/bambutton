@@ -2,7 +2,7 @@
 
 A physical one-button plate-clear control for Bambuddy.
 
-This project turns a small ESP32-C3 board into a wireless despatch button for your 3D printer setup. Press the button when a printer plate has been cleared, and the board sends the clear-plate request to Bambuddy via its API. A status LED provides simple visual feedback so the button can live near the printer as a dedicated shop-floor control.
+This project turns a small ESP32-C3 board into a wireless plate-clear button for your 3D printer setup. Press the button when a printer plate has been cleared, and the board sends the clear-plate request to Bambuddy via its API. A status LED provides simple visual feedback so the button can live near the printer as a dedicated shop-floor control.
 
 ## Setup Routes
 
@@ -58,7 +58,9 @@ Key files:
 - `firmware/ESP32_GENERIC_C3-20260406-v1.28.0.bin` - bundled ESP32-C3 MicroPython firmware image.
 - `scripts/push_micro.py` - copies required MicroPython files to the board with `mpremote`.
 - `scripts/run_main.py` - runs `micro/main.py` on the board without copying it as an auto-start file.
-- `src/bambuddy_config_gui.py` - GUI for selecting firmware, board, pins, Wi-Fi, API key, and printer.
+- `scripts/build_gui.py` - builds the distributable setup assistant executable with PyInstaller.
+- `src/bambuddy_plate_clear_button/gui.py` - GUI for selecting firmware, board, pins, Wi-Fi, API key, and printer.
+- `src/bambuddy_config_gui.py` - compatibility launcher for running the GUI from source.
 
 ## Setup Assistant GUI
 
@@ -70,6 +72,44 @@ For development, run the GUI from source:
 python -m pip install -r requirements.txt
 python src/bambuddy_config_gui.py
 ```
+
+After installing the package, the GUI can also be launched with:
+
+```bash
+bambuddy-plate-clear-button
+```
+
+## Release Packaging
+
+Package versions are derived from Git tags via `hatch-vcs`. Pushing a tag that starts with `v` runs the GitHub release workflow:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The workflow builds and attaches:
+
+- `BambuddyPlateClearButton-windows.zip` - Windows executable.
+- `BambuddyPlateClearButton-macos.zip` - macOS app bundle.
+- Python wheel and source distribution artifacts.
+
+Local build commands are still available for development.
+
+Build Python distribution artifacts:
+
+```bash
+python -m pip install ".[dev]"
+python -m build
+```
+
+Build the setup assistant executable:
+
+```bash
+python scripts/build_gui.py
+```
+
+The executable is written to `dist/BambuddyPlateClearButton` on macOS/Linux or `dist/BambuddyPlateClearButton.exe` on Windows. Release builds should attach that executable so normal users can use the GUI route without installing Python.
 
 ## Manual Configuration
 
