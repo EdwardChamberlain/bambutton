@@ -1,12 +1,16 @@
 #!/usr/bin/env python3
+import contextlib
+import io
 import json
 import re
-import subprocess
 import sys
 import time
 import urllib.error
 import urllib.request
 from pathlib import Path
+
+import esptool
+import mpremote.main
 
 try:
     import FreeSimpleGUI as sg
@@ -366,7 +370,7 @@ def refresh_boards(window, show_errors=True):
 
 
 def list_boards():
-    result = run([sys.executable, "-m", "mpremote", "connect", "list"], capture=True)
+    result = run_mpremote(["connect", "list"], capture=True)
     boards = []
 
     for line in result.stdout.splitlines():
@@ -382,12 +386,9 @@ def list_boards():
 
 
 def flash_firmware(board, firmware_path):
-    run([sys.executable, "-m", "esptool", "--chip", "esp32c3", "--port", board, "erase_flash"])
-    run(
+    run_esptool(["--chip", "esp32c3", "--port", board, "erase_flash"])
+    run_esptool(
         [
-            sys.executable,
-            "-m",
-            "esptool",
             "--chip",
             "esp32c3",
             "--port",
@@ -401,33 +402,72 @@ def flash_firmware(board, firmware_path):
 
 
 def push_config(board):
-    run(mpremote_prefix(board) + ["cp", str(CONFIG_PATH), ":"])
-    run(mpremote_prefix(board) + ["reset"])
+    run_mpremote(mpremote_args(board, "cp", str(CONFIG_PATH), ":"))
+    run_mpremote(mpremote_args(board, "reset"))
 
 
 def push_micro_files(board, clean=False):
     if clean:
-        run(mpremote_prefix(board) + ["exec", CLEAN_BOARD_CODE])
+        run_mpremote(mpremote_args(board, "exec", CLEAN_BOARD_CODE))
 
     files = sorted(MICRO_DIR.glob("*.py")) + [CONFIG_PATH]
     for path in files:
-        run(mpremote_prefix(board) + ["cp", str(path), ":"])
+        run_mpremote(mpremote_args(board, "cp", str(path), ":"))
 
-    run(mpremote_prefix(board) + ["reset"])
-
-
-def mpremote_prefix(board):
-    return [sys.executable, "-m", "mpremote", "connect", board]
+    run_mpremote(mpremote_args(board, "reset"))
 
 
-def run(command, capture=False):
-    result = subprocess.run(
-        command,
-        check=True,
-        text=True,
-        capture_output=capture,
-    )
-    return result
+def mpremote_args(board, *args):
+    return ["connect", board] + list(args)
+
+
+def run_mpremote(args, capture=False):
+    return run_python_entrypoint("mpremote", mpremote.main.main, args, capture)
+
+
+def run_esptool(args, capture=False):
+    return run_python_entrypoint("esptool", esptool._main, args, capture)
+
+
+def run_python_entrypoint(name, entrypoint, args, capture=False):
+    old_argv = sys.argv
+    stdout = io.StringIO()
+    stderr = io.StringIO()
+    sys.argv = [name] + list(args)
+
+    try:
+        if capture:
+            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+                exit_code = call_entrypoint(entrypoint)
+        else:
+            exit_code = call_entrypoint(entrypoint)
+    finally:
+        sys.argv = old_argv
+
+    if exit_code:
+        message = stderr.getvalue() or stdout.getvalue() or "{} failed".format(name)
+        raise RuntimeError(message.strip())
+
+    return ToolResult(stdout.getvalue(), stderr.getvalue())
+
+
+def call_entrypoint(entrypoint):
+    try:
+        result = entrypoint()
+    except SystemExit as exc:
+        if exc.code is None:
+            return 0
+        if isinstance(exc.code, int):
+            return exc.code
+        return 1
+
+    return result or 0
+
+
+class ToolResult:
+    def __init__(self, stdout="", stderr=""):
+        self.stdout = stdout
+        self.stderr = stderr
 
 
 def validate_firmware(path):
