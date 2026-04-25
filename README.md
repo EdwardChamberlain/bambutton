@@ -1,6 +1,6 @@
 # Bambuddy Despatch Button
 
-MicroPython project for an ESP32-C3 board that connects to Wi-Fi, talks to the Bambuddy API, flashes an LED when a printer is awaiting plate clear, and sends a clear-plate request from a GPIO button press.
+MicroPython project for an ESP32-C3 board that connects to Bambuddy via its API and sends a clear-plate request from a GPIO button press. Also features a status indicator LED.
 
 ## Setup Routes
 
@@ -8,17 +8,17 @@ There are two supported ways to configure a board.
 
 ### Recommended: Setup Assistant GUI
 
-Most users should use the setup assistant GUI. Release builds will include this as a Windows `.exe`, so users will not need to install Python, `mpremote`, or `esptool` themselves.
+Most users should use the setup assistant GUI. Release builds will be published so users will not need to install Python, `mpremote`, or `esptool` themselves.
 
 The GUI guides the user through:
 
-- Selecting the correct MicroPython firmware `.bin`.
+- Selecting the MicroPython firmware `.bin`.
 - Selecting a connected ESP32-C3 board.
 - Entering Bambuddy API connection details.
 - Fetching printers from Bambuddy and choosing by friendly name.
 - Setting the LED pin, button pin, Wi-Fi SSID, and Wi-Fi password.
-- Flashing firmware and project files.
-- Pushing settings-only updates later.
+- Flashing firmware and required code.
+- Pushing settings-only updates.
 
 ### Advanced: Manual Flashing
 
@@ -41,6 +41,8 @@ Manual setup requires:
 └── src/        PC-side setup GUI
 ```
 
+Whilst this repo does carry a firmware binary for the ESP32-C3 Generic board I strongly recommend using the latest version from the [micropython website](https://micropython.org/download/ESP32_GENERIC_C3/?utm_source=chatgpt.com)
+
 Key files:
 
 - `micro/main.py` - board entry point and application loop.
@@ -58,25 +60,13 @@ Key files:
 
 ## Setup Assistant GUI
 
-For end users, use the `.exe` from a release build when available.
+For end users, use the built installer when available.
 
 For development, run the GUI from source:
 
 ```bash
 python -m pip install -r requirements.txt
 python src/bambuddy_config_gui.py
-```
-
-The Bambuddy API field expects `IP:port`, for example:
-
-```text
-192.168.1.200:8000
-```
-
-The app constructs the board API base URL as:
-
-```text
-http://192.168.1.200:8000/api/v1
 ```
 
 ## Manual Configuration
@@ -110,15 +100,6 @@ Manual users can edit `micro/config.json` before copying the files to the board:
 }
 ```
 
-For a button wired between GPIO 3 and ground, keep:
-
-```json
-"button": {
-  "pin": 3,
-  "debounce_ms": 150
-}
-```
-
 ## Manual Copying
 
 With `mpremote` installed and the ESP32-C3 connected:
@@ -143,13 +124,13 @@ scripts/push_micro.py --clean
 To copy support files without `main.py`, preventing the app from auto-starting:
 
 ```bash
-scripts/push_micro.py --nomain
+scripts/push_micro.py --no-main
 ```
 
 To wipe the board and leave it without an auto-starting `main.py`:
 
 ```bash
-scripts/push_micro.py --clean --nomain
+scripts/push_micro.py --clean --no-main
 ```
 
 If `mpremote` needs an explicit serial port:
@@ -203,24 +184,13 @@ scripts/push_micro.py --clean
 
 ### Wiring Notes
 
-The current default configuration assumes:
-
-```json
-{
-  "led": {
-    "pin": 8
-  },
-  "button": {
-    "pin": 3
-  }
-}
-```
+The current default configuration uses the onboard LED (although I would recommend using a switch like above that has a built in LED so it is visible):
 
 Use GPIO numbers, not physical pin positions printed by a seller diagram.
 
 Button wiring:
 
-- Connect one side of the momentary switch to GPIO 3.
+- Connect one side of the momentary switch to GPIO 3 or your configured pin.
 - Connect the other side of the switch to GND.
 - The firmware enables the ESP32-C3 internal pull-up, so the button reads high when idle and low when pressed.
 - The interrupt is configured for the falling edge, so it triggers on button press.
