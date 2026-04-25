@@ -109,7 +109,7 @@ Build the setup assistant executable:
 python scripts/build_gui.py
 ```
 
-The executable is written to `dist/BambuddyPlateClearButton` on macOS/Linux or `dist/BambuddyPlateClearButton.exe` on Windows. Release builds should attach that executable so normal users can use the GUI route without installing Python.
+The macOS app is written to `dist/BambuddyPlateClearButton.app`. The Windows executable is written to `dist/BambuddyPlateClearButton.exe`. Release builds should attach the zipped app/executable so normal users can use the GUI route without installing Python.
 
 ## Manual Configuration
 

@@ -9,8 +9,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-import esptool
-import mpremote.main
+import serial.tools.list_ports
 
 try:
     import FreeSimpleGUI as sg
@@ -200,7 +199,6 @@ def build_window(config):
     ]
 
     window = sg.Window("Bambuddy Plate Clear Button Setup", layout, finalize=True)
-    refresh_boards(window, show_errors=False)
     update_action_states(window, window.read(timeout=0)[1])
     return window
 
@@ -370,17 +368,13 @@ def refresh_boards(window, show_errors=True):
 
 
 def list_boards():
-    result = run_mpremote(["connect", "list"], capture=True)
     boards = []
 
-    for line in result.stdout.splitlines():
-        line = line.strip()
-        if not line or line.lower().startswith("no serial"):
+    for port in sorted(serial.tools.list_ports.comports()):
+        if not port.device:
             continue
 
-        port = line.split()[0]
-        if port.startswith(("/", "COM", "com")):
-            boards.append(port)
+        boards.append(port.device)
 
     return boards
 
@@ -422,10 +416,14 @@ def mpremote_args(board, *args):
 
 
 def run_mpremote(args, capture=False):
+    import mpremote.main
+
     return run_python_entrypoint("mpremote", mpremote.main.main, args, capture)
 
 
 def run_esptool(args, capture=False):
+    import esptool
+
     return run_python_entrypoint("esptool", esptool._main, args, capture)
 
 
@@ -436,10 +434,7 @@ def run_python_entrypoint(name, entrypoint, args, capture=False):
     sys.argv = [name] + list(args)
 
     try:
-        if capture:
-            with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-                exit_code = call_entrypoint(entrypoint)
-        else:
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
             exit_code = call_entrypoint(entrypoint)
     finally:
         sys.argv = old_argv

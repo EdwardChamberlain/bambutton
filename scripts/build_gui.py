@@ -29,13 +29,19 @@ def main():
         "PyInstaller",
         "--name",
         "BambuddyPlateClearButton",
-        "--onefile",
         "--windowed",
         "--clean",
         "--noconfirm",
         "--paths",
         str(PROJECT_ROOT / "src"),
+        "--hidden-import",
+        "esptool",
+        "--hidden-import",
+        "mpremote.main",
     ]
+
+    if not sys.platform.startswith("darwin"):
+        command.append("--onefile")
 
     for filename in MICRO_FILES:
         command.extend(
