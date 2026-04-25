@@ -1,6 +1,8 @@
 # Bambuddy Despatch Button
 
-MicroPython project for an ESP32-C3 board that connects to Bambuddy via its API and sends a clear-plate request from a GPIO button press. Also features a status indicator LED.
+A physical one-button plate-clear control for Bambuddy.
+
+This project turns a small ESP32-C3 board into a wireless despatch button for your 3D printer setup. Press the button when a printer plate has been cleared, and the board sends the clear-plate request to Bambuddy via its API. A status LED provides simple visual feedback so the button can live near the printer as a dedicated shop-floor control.
 
 ## Setup Routes
 
