@@ -1,0 +1,24 @@
+{
+  "wifi": {
+    "ssid": "YOUR WIFI SSID",
+    "password": "YOUR WIFI PASSWORD",
+    "timeout_seconds": 10
+  },
+  "api": {
+    "base_url": "http://<BAMBUDDY_IP>:<BAMBUDDY_PORT>/api/v1",
+    "key": "YOUR API KEY"
+  },
+  "printer": {
+    "id": 1,
+    "poll_interval_seconds": 3
+  },
+  "led": {
+    "pin": 8,
+    "flash_interval_ms": 250,
+    "inactive_value": 0
+  },
+  "button": {
+    "pin": 3,
+    "debounce_ms": 150
+  }
+}
