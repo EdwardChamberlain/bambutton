@@ -188,31 +188,21 @@ The current default configuration uses the onboard LED (although I would recomme
 
 Use GPIO numbers, not physical pin positions printed by a seller diagram.
 
-Button wiring:
-
+#### Button wiring:
 - Connect one side of the momentary switch to GPIO 3 or your configured pin.
 - Connect the other side of the switch to GND.
 - The firmware enables the ESP32-C3 internal pull-up, so the button reads high when idle and low when pressed.
 - The interrupt is configured for the falling edge, so it triggers on button press.
 
-LED wiring:
-
+#### LED wiring:
 - The LED output defaults to GPIO 8.
 - If using the ESP32-C3 board's built-in LED, confirm your board uses GPIO 8. Some boards use a different LED GPIO.
 - If wiring the LED inside the external button, connect it only according to the button's voltage/current requirements.
 - Do not feed 5V into an ESP32-C3 GPIO. ESP32-C3 GPIO is 3.3V logic.
 - If the button LED needs more current than a GPIO can safely provide, drive it through a transistor/MOSFET instead of directly from the GPIO.
 
-Power and USB:
+#### Power and USB:
 
 - Use a data-capable USB cable. Charge-only USB cables will power the board but will not appear to `mpremote`.
 - Power the ESP32-C3 from USB during setup and flashing.
 - Disconnect power before changing wiring.
-
-### Hardware Checklist
-
-- ESP32-C3 Super Mini board.
-- 3-6V momentary LED button.
-- Data-capable USB cable.
-- Short jumper wires.
-- Optional resistor/transistor parts if the LED button does not include suitable current limiting.
