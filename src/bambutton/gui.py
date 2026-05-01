@@ -21,7 +21,7 @@ except ImportError:
 PACKAGE_ROOT = Path(__file__).resolve().parent
 SOURCE_ROOT = Path(__file__).resolve().parents[2]
 if hasattr(sys, "_MEIPASS"):
-    RESOURCE_ROOT = Path(sys._MEIPASS) / "bambuddy_plate_clear_button"
+    RESOURCE_ROOT = Path(sys._MEIPASS) / "bambutton"
 else:
     RESOURCE_ROOT = SOURCE_ROOT if (SOURCE_ROOT / "micro").exists() else PACKAGE_ROOT
 
@@ -198,7 +198,7 @@ def build_window(config):
         ],
     ]
 
-    window = sg.Window("Bambuddy Plate Clear Button Setup", layout, finalize=True)
+    window = sg.Window("Bambutton Setup", layout, finalize=True)
     update_action_states(window, window.read(timeout=0)[1])
     return window
 

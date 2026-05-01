@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from bambuddy_plate_clear_button.gui import main
+from bambutton.gui import main
 
 
 if __name__ == "__main__":

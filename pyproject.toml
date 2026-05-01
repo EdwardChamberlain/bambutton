@@ -3,8 +3,8 @@ requires = ["hatchling>=1.27.0", "hatch-vcs>=0.4.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "bambuddy-plate-clear-button"
-description = "PC setup GUI and MicroPython board code for the Bambuddy Plate Clear Button."
+name = "bambutton"
+description = "PC setup GUI and MicroPython board code for the Bambutton."
 readme = "README.md"
 requires-python = ">=3.11"
 authors = [
@@ -18,7 +18,7 @@ dependencies = [
 dynamic = ["version"]
 
 [project.scripts]
-bambuddy-plate-clear-button = "bambuddy_plate_clear_button.gui:main"
+bambutton = "bambutton.gui:main"
 
 [project.optional-dependencies]
 dev = [
@@ -36,18 +36,18 @@ source = "vcs"
 local_scheme = "no-local-version"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/bambuddy_plate_clear_button"]
+packages = ["src/bambutton"]
 
 [tool.hatch.build.targets.wheel.force-include]
-"micro/api.py" = "bambuddy_plate_clear_button/micro/api.py"
-"micro/bambuddy_api.py" = "bambuddy_plate_clear_button/micro/bambuddy_api.py"
-"micro/config_loader.py" = "bambuddy_plate_clear_button/micro/config_loader.py"
-"micro/gpio_button.py" = "bambuddy_plate_clear_button/micro/gpio_button.py"
-"micro/led_flasher.py" = "bambuddy_plate_clear_button/micro/led_flasher.py"
-"micro/main.py" = "bambuddy_plate_clear_button/micro/main.py"
-"micro/wifi.py" = "bambuddy_plate_clear_button/micro/wifi.py"
-"micro/config_example.json" = "bambuddy_plate_clear_button/micro/config_example.json"
-"firmware" = "bambuddy_plate_clear_button/firmware"
+"micro/api.py" = "bambutton/micro/api.py"
+"micro/bambuddy_api.py" = "bambutton/micro/bambuddy_api.py"
+"micro/config_loader.py" = "bambutton/micro/config_loader.py"
+"micro/gpio_button.py" = "bambutton/micro/gpio_button.py"
+"micro/led_flasher.py" = "bambutton/micro/led_flasher.py"
+"micro/main.py" = "bambutton/micro/main.py"
+"micro/wifi.py" = "bambutton/micro/wifi.py"
+"micro/config_example.json" = "bambutton/micro/config_example.json"
+"firmware" = "bambutton/firmware"
 
 [tool.hatch.build.targets.sdist]
 include = [

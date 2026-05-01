@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-ENTRYPOINT = PROJECT_ROOT / "src" / "bambuddy_plate_clear_button" / "gui.py"
+ENTRYPOINT = PROJECT_ROOT / "src" / "bambutton" / "gui.py"
 MICRO_DIR = PROJECT_ROOT / "micro"
 FIRMWARE_DIR = PROJECT_ROOT / "firmware"
 PYINSTALLER_CONFIG_DIR = PROJECT_ROOT / ".pyinstaller-cache"
@@ -28,7 +28,7 @@ def main():
         "-m",
         "PyInstaller",
         "--name",
-        "BambuddyPlateClearButton",
+        "Bambutton",
         "--windowed",
         "--clean",
         "--noconfirm",
@@ -47,14 +47,14 @@ def main():
         command.extend(
             [
                 "--add-data",
-                data_arg(MICRO_DIR / filename, "bambuddy_plate_clear_button/micro"),
+                data_arg(MICRO_DIR / filename, "bambutton/micro"),
             ]
         )
 
     command.extend(
         [
             "--add-data",
-            data_arg(FIRMWARE_DIR, "bambuddy_plate_clear_button/firmware"),
+            data_arg(FIRMWARE_DIR, "bambutton/firmware"),
         ]
     )
     command.append(str(ENTRYPOINT))

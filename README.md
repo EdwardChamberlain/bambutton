@@ -1,4 +1,4 @@
-# Bambuddy Plate Clear Button
+# Bambutton
 
 A physical one-button plate-clear control for Bambuddy.
 
@@ -59,8 +59,8 @@ Key files:
 - `scripts/push_micro.py` - copies required MicroPython files to the board with `mpremote`.
 - `scripts/run_main.py` - runs `micro/main.py` on the board without copying it as an auto-start file.
 - `scripts/build_gui.py` - builds the distributable setup assistant executable with PyInstaller.
-- `src/bambuddy_plate_clear_button/gui.py` - GUI for selecting firmware, board, pins, Wi-Fi, API key, and printer.
-- `src/bambuddy_config_gui.py` - compatibility launcher for running the GUI from source.
+- `src/bambutton/gui.py` - GUI for selecting firmware, board, pins, Wi-Fi, API key, and printer.
+- `src/bambutton_config_gui.py` - compatibility launcher for running the GUI from source.
 
 ## Setup Assistant GUI
 
@@ -70,13 +70,13 @@ For development, run the GUI from source:
 
 ```bash
 python -m pip install -r requirements.txt
-python src/bambuddy_config_gui.py
+python src/bambutton_config_gui.py
 ```
 
 After installing the package, the GUI can also be launched with:
 
 ```bash
-bambuddy-plate-clear-button
+bambutton
 ```
 
 ## Release Packaging
@@ -90,8 +90,8 @@ git push origin v0.1.0
 
 The workflow builds and attaches:
 
-- `BambuddyPlateClearButton-windows.zip` - Windows executable.
-- `BambuddyPlateClearButton-macos.zip` - macOS app bundle.
+- `Bambutton-windows.zip` - Windows executable.
+- `Bambutton-macos.zip` - macOS app bundle.
 - Python wheel and source distribution artifacts.
 
 Local build commands are still available for development.
@@ -109,7 +109,7 @@ Build the setup assistant executable:
 python scripts/build_gui.py
 ```
 
-The macOS app is written to `dist/BambuddyPlateClearButton.app`. The Windows executable is written to `dist/BambuddyPlateClearButton.exe`. Release builds should attach the zipped app/executable so normal users can use the GUI route without installing Python.
+The macOS app is written to `dist/Bambutton.app`. The Windows executable is written to `dist/Bambutton.exe`. Release builds should attach the zipped app/executable so normal users can use the GUI route without installing Python.
 
 ## Manual Configuration
 
