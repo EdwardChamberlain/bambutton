@@ -63,13 +63,13 @@ jobs:
 
       - name: Package executable
         shell: pwsh
-        run: Compress-Archive -Path dist/BambuddyPlateClearButton.exe -DestinationPath dist/BambuddyPlateClearButton-windows.zip -Force
+        run: Compress-Archive -Path dist/Bambutton.exe -DestinationPath dist/Bambutton-windows.zip -Force
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-exe
-          path: dist/BambuddyPlateClearButton-windows.zip
+          path: dist/Bambutton-windows.zip
 
   macos-app:
     name: Build macOS app
@@ -95,13 +95,13 @@ jobs:
         run: python scripts/build_gui.py
 
       - name: Package app bundle
-        run: ditto -c -k --keepParent dist/BambuddyPlateClearButton.app dist/BambuddyPlateClearButton-macos.zip
+        run: ditto -c -k --keepParent dist/Bambutton.app dist/Bambutton-macos.zip
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos-app
-          path: dist/BambuddyPlateClearButton-macos.zip
+          path: dist/Bambutton-macos.zip
 
   release:
     name: Publish GitHub release
