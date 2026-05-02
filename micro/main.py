@@ -104,10 +104,11 @@ def handle_printer_status_update():
     global CHAMBER_LIGHT_IS_ON
 
     try:
-        PRINTER_AWAITING_PLATE_CLEAR = api.printer_is_awaiting_plate_clear(config["printer"]["id"])
-        CHAMBER_LIGHT_IS_ON = api.chamber_light_is_lit(config["printer"]["id"])
-        print("Printer awaiting plate clear:", PRINTER_AWAITING_PLATE_CLEAR)
-        print("Chamber light is on:", CHAMBER_LIGHT_IS_ON)
+        response = api.get_printer_status(config["printer"]["id"])
+        PRINTER_AWAITING_PLATE_CLEAR = response["awaiting_plate_clear"]
+        CHAMBER_LIGHT_IS_ON = response["chamber_light"]
+
+        print("Printer awaiting plate clear:", PRINTER_AWAITING_PLATE_CLEAR, "Chamber light is on:", CHAMBER_LIGHT_IS_ON)
 
     except Exception as exc:
         print("Failed to fetch printer status:", exc)
