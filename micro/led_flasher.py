@@ -36,6 +36,6 @@ class LedFlasher:
             self.led.value(not self.led.value())
         else:
             if callable(self.inactive_value):
-                self.led.value(self.inactive_value())
+                self.led.value(not self.inactive_value())
             else:
-                self.led.value(self.inactive_value)
+                self.led.value(not self.inactive_value)
