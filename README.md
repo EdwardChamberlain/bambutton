@@ -232,7 +232,10 @@ scripts/push_micro.py --clean
 
 ### Printed Parts
 
-The top and bottom housing files are available in the `printed_parts` folder in this repository. These parts are designed to fit the hardware listed above.
+The top and bottom housing files are available on [makerworld](https://makerworld.com/en/models/2747607-bambutton-on-machine-bambuddy-plate-tracking).
+
+
+These parts are designed to fit the hardware listed above.
 
 You can print the housing in any colour or material you like. I found it useful to apply a small piece of double-sided tape to the ESP32-C3 board to hold it in place during assembly.
 
