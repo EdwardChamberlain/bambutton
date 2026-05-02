@@ -131,13 +131,15 @@ Manual users can edit `micro/config.json` before copying the files to the board:
     "poll_interval_seconds": 5
   },
   "led": {
-    "pin": 8,
+    "pin": 3,
     "flash_interval_ms": 250,
     "inactive_value": 0
   },
   "button": {
-    "pin": 3,
-    "debounce_ms": 150
+    "pin": 4,
+    "debounce_ms": 150,
+    "pull": "down",
+    "trigger": "rising"
   }
 }
 ```
@@ -226,22 +228,32 @@ scripts/push_micro.py --clean
 
 ### Wiring Notes
 
-The current default configuration uses the onboard LED (although I would recommend using a switch like above that has a built in LED so it is visible):
+The default configuration matches this final wiring:
+
+```text
+GPIO3 -> LED -> GND
+GPIO4 -> button -> 3V3
+```
 
 Use GPIO numbers, not physical pin positions printed by a seller diagram.
 
 #### Button wiring:
-- Connect one side of the momentary switch to GPIO 3 or your configured pin.
-- Connect the other side of the switch to GND.
-- The firmware enables the ESP32-C3 internal pull-up, so the button reads high when idle and low when pressed.
-- The interrupt is configured for the falling edge, so it triggers on button press.
+- Connect one side of the momentary switch to GPIO 4 or your configured pin.
+- Connect the other side of the switch to 3V3.
+- The firmware enables the ESP32-C3 internal pull-down, so the button reads low when idle and high when pressed.
+- The interrupt is configured for the rising edge, so it triggers on button press.
 
 #### LED wiring:
-- The LED output defaults to GPIO 8.
-- If using the ESP32-C3 board's built-in LED, confirm your board uses GPIO 8. Some boards use a different LED GPIO.
+- The LED output defaults to GPIO 3.
+- Wire GPIO 3 to the LED anode through a suitable current-limiting resistor, then wire the LED cathode to GND.
 - If wiring the LED inside the external button, connect it only according to the button's voltage/current requirements.
 - Do not feed 5V into an ESP32-C3 GPIO. ESP32-C3 GPIO is 3.3V logic.
 - If the button LED needs more current than a GPIO can safely provide, drive it through a transistor/MOSFET instead of directly from the GPIO.
+
+```text
+GPIO3 -> resistor -> LED -> GND
+GPIO4 -> button -> 3V3
+```
 
 #### Power and USB:
 

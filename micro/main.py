@@ -34,6 +34,8 @@ button = gpio_button.GPIOButton(
     pin_number=config["button"]["pin"],
     on_press=handle_button_press,
     debounce_ms=config["button"]["debounce_ms"],
+    pull=config["button"]["pull"],
+    trigger=config["button"]["trigger"],
 )
 button.start()
 

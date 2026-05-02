@@ -9,16 +9,18 @@
     "key": "YOUR API KEY"
   },
   "printer": {
-    "id": 1,
+    "id": 3,
     "poll_interval_seconds": 3
   },
   "led": {
-    "pin": 8,
+    "pin": 3,
     "flash_interval_ms": 250,
-    "inactive_value": 0
+    "inactive_value": 1
   },
   "button": {
-    "pin": 3,
-    "debounce_ms": 150
+    "pin": 4,
+    "debounce_ms": 150,
+    "pull": "down",
+    "trigger": "rising"
   }
 }

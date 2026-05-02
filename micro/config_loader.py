@@ -19,13 +19,15 @@ DEFAULT_CONFIG = {
         "poll_interval_seconds": 5,
     },
     "led": {
-        "pin": 8,
+        "pin": 3,
         "flash_interval_ms": 250,
         "inactive_value": 0,
     },
     "button": {
-        "pin": 3,
+        "pin": 4,
         "debounce_ms": 150,
+        "pull": "down",
+        "trigger": "rising",
     },
 }
 

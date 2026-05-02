@@ -12,14 +12,18 @@ class GPIOButton:
         pin_number,
         on_press,
         debounce_ms=100,
-        pull=Pin.PULL_UP,
-        trigger=Pin.IRQ_FALLING,
+        pull=Pin.PULL_DOWN,
+        trigger=Pin.IRQ_RISING,
     ):
         self.pin_number = pin_number
         self.on_press = on_press
         self.debounce_ms = debounce_ms
-        self.pin = Pin(pin_number, Pin.IN, pull)
-        self.trigger = trigger
+        pull = _resolve_pull(pull)
+        if pull is None:
+            self.pin = Pin(pin_number, Pin.IN)
+        else:
+            self.pin = Pin(pin_number, Pin.IN, pull)
+        self.trigger = _resolve_trigger(trigger)
         self.last_press_ms = 0
         self._scheduled_press = self._handle_scheduled_press
 
@@ -43,3 +47,31 @@ class GPIOButton:
 
     def _handle_scheduled_press(self, pin):
         self.on_press(pin)
+
+
+def _resolve_pull(pull):
+    if isinstance(pull, str):
+        pull = pull.lower()
+        if pull == "up":
+            return Pin.PULL_UP
+        if pull == "down":
+            return Pin.PULL_DOWN
+        if pull in ("none", ""):
+            return None
+        raise ValueError("Unsupported button pull: {}".format(pull))
+
+    return pull
+
+
+def _resolve_trigger(trigger):
+    if isinstance(trigger, str):
+        trigger = trigger.lower()
+        if trigger == "falling":
+            return Pin.IRQ_FALLING
+        if trigger == "rising":
+            return Pin.IRQ_RISING
+        if trigger == "both":
+            return Pin.IRQ_FALLING | Pin.IRQ_RISING
+        raise ValueError("Unsupported button trigger: {}".format(trigger))
+
+    return trigger

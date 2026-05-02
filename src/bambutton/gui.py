@@ -208,8 +208,8 @@ def load_existing_config():
         "wifi": {"ssid": "", "password": "", "timeout_seconds": 10},
         "api": {"base_url": "", "key": ""},
         "printer": {"id": 1, "poll_interval_seconds": 3},
-        "led": {"pin": 8, "flash_interval_ms": 250, "inactive_value": 0},
-        "button": {"pin": 3, "debounce_ms": 150},
+        "led": {"pin": 3, "flash_interval_ms": 250, "inactive_value": 0},
+        "button": {"pin": 4, "debounce_ms": 150, "pull": "down", "trigger": "rising"},
     }
 
     try:
@@ -347,6 +347,8 @@ def build_config(values, printers_by_label):
         "button": {
             "pin": parse_pin(values["-BUTTON_PIN-"], "Button pin"),
             "debounce_ms": 150,
+            "pull": "down",
+            "trigger": "rising",
         },
     }
 
