@@ -240,6 +240,8 @@ The small alignment holes are designed to accept short pieces of 1.75 mm filamen
 
 The housing can be secured with 4 × M3 × 12 cap head bolts. These may not be required if the filament dowels are a tight enough fit.
 
+I have also included a printed tool for doing up the M16 nut on the button as otherwise it is a bit difficult!
+
 ### Wiring Notes
 
 The default configuration matches this final wiring:
