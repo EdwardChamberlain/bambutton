@@ -254,7 +254,7 @@ GPIO3 -> LED -> GND
 GPIO4 -> button -> 3V3
 ```
 
-Use GPIO numbers, not physical pin positions printed by a seller diagram.
+Use GPIO numbers, not physical pin positions.
 
 #### Button wiring:
 - Connect one side of the momentary switch to GPIO 4 or your configured pin.
@@ -268,11 +268,6 @@ Use GPIO numbers, not physical pin positions printed by a seller diagram.
 - If wiring the LED inside the external button, connect it only according to the button's voltage/current requirements.
 - Do not feed 5V into an ESP32-C3 GPIO. ESP32-C3 GPIO is 3.3V logic.
 - If the button LED needs more current than a GPIO can safely provide, drive it through a transistor/MOSFET instead of directly from the GPIO.
-
-```text
-GPIO3 -> resistor -> LED -> GND
-GPIO4 -> button -> 3V3
-```
 
 #### Power and USB:
 
