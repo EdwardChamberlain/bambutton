@@ -2,7 +2,7 @@ from machine import Timer
 
 
 class PeriodicTimer:
-    _available_timer_ids = [1, 2, 3]
+    _available_timer_ids = [0, 1, 2, 3]
 
     def __init__(self, period_ms, callback):
         self.period_ms = period_ms
