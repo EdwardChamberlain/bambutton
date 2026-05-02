@@ -81,3 +81,7 @@ class BambuddyAPI(API):
 
     def clear_plate(self, printer_id):
         return self._post(f"printers/{printer_id}/clear-plate")
+
+    def chamber_light_is_lit(self, printer_id):
+        status = self.get_printer_status(printer_id)
+        return status.get("chamber_light", False)

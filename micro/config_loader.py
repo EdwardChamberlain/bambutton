@@ -21,7 +21,6 @@ DEFAULT_CONFIG = {
     "led": {
         "pin": 3,
         "flash_interval_ms": 250,
-        "inactive_value": 0,
     },
     "button": {
         "pin": 4,

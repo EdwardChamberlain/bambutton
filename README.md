@@ -136,8 +136,7 @@ Manual users can edit `micro/config.json` before copying the files to the board:
   },
   "led": {
     "pin": 3,
-    "flash_interval_ms": 250,
-    "inactive_value": 0
+    "flash_interval_ms": 250
   },
   "button": {
     "pin": 4,

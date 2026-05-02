@@ -12,6 +12,7 @@ config = config_loader.load_config()
 # -- Runtime Flags ---
 PRINTER_AWAITING_PLATE_CLEAR = False
 PENDING_BUTTON_PRESS = False
+CHAMBER_LIGHT_IS_ON = True
 PRINTER_STATUS_UPDATE_REQUIRED = True
 
 # -- Initialize LED flasher ---
@@ -19,7 +20,7 @@ flasher = led_flasher.LedFlasher(
     pin_number=config["led"]["pin"],
     should_flash=lambda: PRINTER_AWAITING_PLATE_CLEAR,
     interval_ms=config["led"]["flash_interval_ms"],
-    inactive_value=config["led"]["inactive_value"],
+    inactive_value=lambda: CHAMBER_LIGHT_IS_ON,
 )
 flasher.start()
 
@@ -100,10 +101,13 @@ def handle_pending_button_press():
 
 def handle_printer_status_update():
     global PRINTER_AWAITING_PLATE_CLEAR, PRINTER_STATUS_UPDATE_REQUIRED
+    global CHAMBER_LIGHT_IS_ON
 
     try:
         PRINTER_AWAITING_PLATE_CLEAR = api.printer_is_awaiting_plate_clear(config["printer"]["id"])
+        CHAMBER_LIGHT_IS_ON = api.chamber_light_is_lit(config["printer"]["id"])
         print("Printer awaiting plate clear:", PRINTER_AWAITING_PLATE_CLEAR)
+        print("Chamber light is on:", CHAMBER_LIGHT_IS_ON)
 
     except Exception as exc:
         print("Failed to fetch printer status:", exc)
