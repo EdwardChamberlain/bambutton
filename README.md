@@ -230,6 +230,16 @@ scripts/push_micro.py --clean
 - [ESP32-C3 Super Mini](https://www.aliexpress.com/item/1005008805263277.html?spm=a2g0o.order_list.order_list_main.5.61041802T9J6qU)
 - [LED Button](https://www.aliexpress.com/item/1005004920346156.html?) - select the **3-6V momentary** option.
 
+### Printed Parts
+
+The top and bottom housing files are available in the `printed_parts` folder in this repository. These parts are designed to fit the hardware listed above.
+
+You can print the housing in any colour or material you like. I found it useful to apply a small piece of double-sided tape to the ESP32-C3 board to hold it in place during assembly.
+
+The small alignment holes are designed to accept short pieces of 1.75 mm filament (6 mm should do it!), which can be used as simple dowel pins to align the top and bottom halves.
+
+The housing can be secured with 4 × M3 × 12 cap head bolts. These may not be required if the filament dowels are a tight enough fit.
+
 ### Wiring Notes
 
 The default configuration matches this final wiring:
@@ -261,6 +271,6 @@ GPIO4 -> button -> 3V3
 
 #### Power and USB:
 
-- Use a data-capable USB cable. Charge-only USB cables will power the board but will not appear to `mpremote`.
+- Use a data-capable USB cable for programming. Charge-only USB cables will power the board but will not appear to `mpremote`.
 - Power the ESP32-C3 from USB during setup and flashing.
 - Disconnect power before changing wiring.
