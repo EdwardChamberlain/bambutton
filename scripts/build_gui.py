@@ -17,6 +17,7 @@ MICRO_FILES = [
     "gpio_button.py",
     "led_flasher.py",
     "main.py",
+    "periodic_timer.py",
     "wifi.py",
     "config_example.json",
 ]
