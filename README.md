@@ -1,8 +1,12 @@
 # Bambutton
 
-A physical one-button plate-clear control for Bambuddy.
+![Bambutton in use on a P1S](assets/inuse.png)
 
-This project turns a small ESP32-C3 board into a wireless plate-clear button for your 3D printer setup. Press the button when a printer plate has been cleared, and the board sends the clear-plate request to Bambuddy via its API. A status LED provides simple visual feedback so the button can live near the printer as a dedicated shop-floor control.
+A physical plate-clear button for Bambuddy.
+
+Bambutton turns a small ESP32-C3 board into a dedicated wireless control for your printer. The LED ring shows when a plate needs clearing, and one button press marks the plate as clear in Bambuddy so the next queued job can be despatched automatically.
+
+It gives each printer a simple shop-floor control that is quick to see, quick to press, and easier than opening the Bambuddy interface every time.
 
 ## Setup Routes
 
