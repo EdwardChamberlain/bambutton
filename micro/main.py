@@ -81,11 +81,13 @@ poll_timer.start()
 def handle_pending_button_press():
     global PENDING_BUTTON_PRESS
     global PRINTER_AWAITING_PLATE_CLEAR
+    global PRINTER_STATUS_UPDATE_REQUIRED
 
     if PRINTER_AWAITING_PLATE_CLEAR:
         try:
             PRINTER_AWAITING_PLATE_CLEAR = False
             api.clear_plate(config["printer"]["id"])
+            PRINTER_STATUS_UPDATE_REQUIRED = True
 
         except Exception as exc:
             print("Failed to send plate clear request:", exc)
