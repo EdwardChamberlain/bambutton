@@ -431,8 +431,8 @@ def run_esptool(args, capture=False):
 
 def run_python_entrypoint(name, entrypoint, args, capture=False):
     old_argv = sys.argv
-    stdout = io.StringIO()
-    stderr = io.StringIO()
+    stdout = CapturedText()
+    stderr = CapturedText()
     sys.argv = [name] + list(args)
 
     try:
@@ -465,6 +465,10 @@ class ToolResult:
     def __init__(self, stdout="", stderr=""):
         self.stdout = stdout
         self.stderr = stderr
+
+
+class CapturedText(io.StringIO):
+    encoding = "utf-8"
 
 
 def validate_firmware(path):

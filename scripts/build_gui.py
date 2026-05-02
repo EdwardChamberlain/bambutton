@@ -38,6 +38,8 @@ def main():
         "esptool",
         "--hidden-import",
         "mpremote.main",
+        "--collect-data",
+        "esptool",
     ]
 
     if not sys.platform.startswith("darwin"):
