@@ -85,7 +85,7 @@ bambutton
 
 ## Release Packaging
 
-Package versions are derived from Git tags via `hatch-vcs`. Pushing a tag that starts with `v` runs the GitHub release workflow:
+Package versions are derived from Git tags via `hatch-vcs`. Tags that start with `v` runs the GitHub release workflow:
 
 ```bash
 git tag v0.1.0
@@ -210,7 +210,7 @@ scripts/run_main.py
 
 ## Manual Firmware Flashing
 
-The GUI performs these steps for normal users. Advanced users can run them manually with `esptool.py`, replacing the serial port with the board's port:
+The GUI also performs these steps. Advanced users can run them manually with `esptool.py`, replacing the serial port with the board's port:
 
 ```bash
 esptool.py --chip esp32c3 --port /dev/tty.usbmodemXXXX erase_flash
@@ -274,3 +274,5 @@ Use GPIO numbers, not physical pin positions.
 - Use a data-capable USB cable for programming. Charge-only USB cables will power the board but will not appear to `mpremote`.
 - Power the ESP32-C3 from USB during setup and flashing.
 - Disconnect power before changing wiring.
+- Once configured a "power only" cable will be ok as no data is transferred.
+- You can power this from the P1S internal USB port.
