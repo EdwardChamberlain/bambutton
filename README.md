@@ -231,7 +231,7 @@ scripts/push_micro.py --clean
 ### Purchased Parts
 
 - [ESP32-C3 Super Mini](https://www.aliexpress.com/item/1005008805263277.html?spm=a2g0o.order_list.order_list_main.5.61041802T9J6qU)
-- [LED Button](https://www.aliexpress.com/item/1005004920346156.html?) - select the **3-6V momentary** option.
+- [LED Button](https://www.aliexpress.com/item/1005004920346156.html?) - select the **16 mm, 3-6V momentary** option. The case and assembly instructions are designed for this button size.
 
 ### Printed Parts
 
