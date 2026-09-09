@@ -71,3 +71,12 @@ def test_connect_disables_wifi_power_management(monkeypatch):
     wlan = wifi.connect()
 
     assert wlan.config_calls == [{"pm": "pm-none"}]
+
+
+def test_connect_uses_configured_hostname(monkeypatch):
+    events = []
+    wifi_module = load_wifi_module(monkeypatch, events)
+
+    wifi_module.WiFi("ssid", "password", hostname="shop-button").connect()
+
+    assert events[0] == ("hostname", "shop-button")

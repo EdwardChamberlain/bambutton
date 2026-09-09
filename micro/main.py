@@ -1,11 +1,12 @@
+import machine
 import time
-from machine import WDT
 import bambuddy_api
 import config_loader
 import gpio_button
 import led_flasher
 import wifi
 import periodic_timer
+import web_config
 
 
 config = config_loader.load_config()
@@ -18,7 +19,7 @@ PRINTER_STATUS_UPDATE_REQUIRED = True
 
 # Feed this only from the healthy main loop. If a network request or the
 # networking stack blocks, the board will reboot and reconnect from scratch.
-watchdog = WDT(timeout=60_000)
+watchdog = machine.WDT(timeout=60_000)
 
 # -- Initialize LED flasher ---
 flasher = led_flasher.LedFlasher(
@@ -59,6 +60,7 @@ try:
     network = wifi.WiFi(
         ssid=config["wifi"]["ssid"],
         password=config["wifi"]["password"],
+        hostname=config["wifi"].get("hostname", wifi.DEFAULT_HOSTNAME),
         status_led=None,
         timeout_seconds=config["wifi"]["timeout_seconds"],
     )
@@ -131,9 +133,42 @@ def handle_printer_status_update():
     PRINTER_STATUS_UPDATE_REQUIRED = False
 
 
+def debug_status():
+    try:
+        network_config = network.ifconfig()
+    except Exception as exc:
+        network_config = ("unavailable: {}".format(exc),)
+
+    return {
+        "Wi-Fi connected": network.is_connected(),
+        "IP address": network_config[0] if network_config else "unavailable",
+        "Awaiting plate clear": PRINTER_AWAITING_PLATE_CLEAR,
+        "Button press pending": PENDING_BUTTON_PRESS,
+        "Chamber light on": CHAMBER_LIGHT_IS_ON,
+        "Status update pending": PRINTER_STATUS_UPDATE_REQUIRED,
+    }
+
+
+try:
+    web_server = web_config.WebConfigServer(
+        config=config,
+        api=api,
+        status_provider=debug_status,
+    )
+    print("Web configuration available at http://{}/".format(network.ifconfig()[0]))
+except Exception as exc:
+    web_server = None
+    print("Web configuration server unavailable:", exc)
+
+
 # -- Main loop --
 while True:
     watchdog.feed()
+
+    if web_server is not None and web_server.poll():
+        print("Configuration updated; restarting")
+        time.sleep_ms(100)
+        machine.reset()
 
     # Push button press to API if pending
     if PENDING_BUTTON_PRESS:
