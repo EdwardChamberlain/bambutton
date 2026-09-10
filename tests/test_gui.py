@@ -22,7 +22,7 @@ def test_web_setup_uses_firmware_defaults_without_a_saved_config():
     assert gui.config_path_for_mode({"-WEB-": True}) is None
 
 
-def test_serial_port_is_optional_for_web_setup():
+def test_web_setup_does_not_require_serial_port():
     assert gui.collect_basic_errors({"-WEB-": True}) == []
 
 
@@ -60,13 +60,13 @@ def test_push_micro_files_installs_selected_file_as_config_json(tmp_path, monkey
     monkeypatch.setattr(gui, "MICRO_DIR", micro_dir)
     monkeypatch.setattr(gui, "run_mpremote", lambda args, capture=False: calls.append(args))
 
-    gui.push_micro_files("/dev/tty.button", config_path, clean=True)
+    gui.push_micro_files(config_path, clean=True)
 
-    assert calls[0][:3] == ["connect", "/dev/tty.button", "exec"]
-    assert calls[1][3:] == [str(micro_dir / "a_module.py"), ":"]
-    assert calls[2][3:] == [str(micro_dir / "b_module.py"), ":"]
-    assert calls[3][3:] == [str(config_path), ":config.json"]
-    assert calls[4] == ["connect", "/dev/tty.button", "reset"]
+    assert calls[0][0] == "exec"
+    assert calls[1][1:] == [str(micro_dir / "a_module.py"), ":"]
+    assert calls[2][1:] == [str(micro_dir / "b_module.py"), ":"]
+    assert calls[3][1:] == [str(config_path), ":config.json"]
+    assert calls[4] == ["reset"]
 
 
 def test_push_micro_files_omits_config_for_web_gui_setup(tmp_path, monkeypatch):
@@ -78,29 +78,17 @@ def test_push_micro_files_omits_config_for_web_gui_setup(tmp_path, monkeypatch):
     monkeypatch.setattr(gui, "MICRO_DIR", micro_dir)
     monkeypatch.setattr(gui, "run_mpremote", lambda args, capture=False: calls.append(args))
 
-    gui.push_micro_files("/dev/tty.button", None, clean=True)
+    gui.push_micro_files(None, clean=True)
 
-    assert [call[2] for call in calls] == ["exec", "cp", "reset"]
-
-
-def test_mpremote_args_uses_auto_detection_when_port_is_blank():
-    assert gui.mpremote_args("", "reset") == ["reset"]
-    assert gui.mpremote_args("/dev/tty.button", "reset") == [
-        "connect",
-        "/dev/tty.button",
-        "reset",
-    ]
+    assert [call[0] for call in calls] == ["exec", "cp", "reset"]
 
 
-def test_esptool_args_only_includes_port_when_supplied():
-    assert gui.esptool_args(None, "erase_flash") == ["--chip", "esp32c3", "erase_flash"]
-    assert gui.esptool_args("/dev/tty.button", "erase_flash") == [
-        "--chip",
-        "esp32c3",
-        "--port",
-        "/dev/tty.button",
-        "erase_flash",
-    ]
+def test_mpremote_args_uses_auto_detection():
+    assert gui.mpremote_args("reset") == ["reset"]
+
+
+def test_esptool_args_uses_auto_detection():
+    assert gui.esptool_args("erase_flash") == ["--chip", "esp32c3", "erase_flash"]
 
 
 def test_flash_board_flashes_firmware_before_application_files(tmp_path, monkeypatch):
@@ -110,18 +98,18 @@ def test_flash_board_flashes_firmware_before_application_files(tmp_path, monkeyp
     config_path.write_text(json.dumps({"wifi": {}}))
     events = []
 
-    monkeypatch.setattr(gui, "flash_firmware", lambda board, path: events.append(("firmware", board, path)))
+    monkeypatch.setattr(gui, "flash_firmware", lambda path: events.append(("firmware", path)))
     monkeypatch.setattr(gui.time, "sleep", lambda seconds: events.append(("sleep", seconds)))
     monkeypatch.setattr(
         gui,
         "push_micro_files",
-        lambda board, path, clean=False: events.append(("files", board, path, clean)),
+        lambda path, clean=False: events.append(("files", path, clean)),
     )
 
-    gui.flash_board("/dev/tty.button", firmware_path, config_path)
+    gui.flash_board(firmware_path, config_path)
 
     assert events == [
-        ("firmware", "/dev/tty.button", firmware_path),
+        ("firmware", firmware_path),
         ("sleep", gui.FIRMWARE_RESTART_DELAY_SECONDS),
-        ("files", "/dev/tty.button", config_path, True),
+        ("files", config_path, True),
     ]

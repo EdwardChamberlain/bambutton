@@ -19,7 +19,7 @@ Most users should use the setup assistant GUI. Release builds will be published 
 The GUI guides the user through:
 
 - Choosing either Web GUI setup or Config based setup.
-- Optionally selecting a serial port; leaving it blank auto-detects the connected ESP32-C3.
+- Automatically detecting the connected ESP32-C3; no serial port selection is required.
 - Flashing the bundled generic MicroPython firmware and application files.
 - Optionally selecting an existing `config.json` to install with the firmware.
 

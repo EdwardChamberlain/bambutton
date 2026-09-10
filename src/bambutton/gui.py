@@ -6,8 +6,6 @@ import sys
 import time
 from pathlib import Path
 
-import serial.tools.list_ports
-
 try:
     import FreeSimpleGUI as sg
 except ImportError:
@@ -61,15 +59,11 @@ def main():
 
             update_action_states(window, values)
 
-            if event == "-REFRESH_BOARDS-":
-                refresh_boards(window)
-
-            elif event == "-FLASH-":
+            if event == "-FLASH-":
                 try:
-                    board = normalize_serial_port(values.get("-BOARD-"))
                     firmware_path = validate_firmware(first_firmware_file())
                     config_path = config_path_for_mode(values)
-                    flash_board(board, firmware_path, config_path)
+                    flash_board(firmware_path, config_path)
                     sg.popup("Firmware and project files flashed.")
                 except Exception as exc:
                     sg.popup_error("Could not flash firmware", str(exc))
@@ -104,20 +98,6 @@ def build_window():
                         ),
                         sg.Text("Flash generic firmware with an existing config.json file."),
                     ],
-                ],
-                expand_x=True,
-            )
-        ],
-        [
-            sg.Frame(
-                "Board",
-                [
-                    [
-                        sg.Text("Serial port (optional)", size=(20, 1)),
-                        sg.Combo([], key="-BOARD-", size=(32, 1), enable_events=True),
-                        sg.Button("Refresh boards", key="-REFRESH_BOARDS-"),
-                    ],
-                    [sg.Text("Leave blank to auto-detect the connected ESP32-C3.")],
                 ],
                 expand_x=True,
             )
@@ -211,72 +191,42 @@ def validate_config_file(path):
     return config_path
 
 
-def refresh_boards(window, show_errors=True):
-    try:
-        boards = list_boards()
-        window["-BOARD-"].update(values=boards, value=boards[0] if len(boards) == 1 else "")
-    except Exception as exc:
-        window["-BOARD-"].update(values=[], value="")
-        if show_errors:
-            sg.popup_error("Could not list boards", str(exc))
-
-
-def list_boards():
-    boards = []
-
-    for port in sorted(serial.tools.list_ports.comports()):
-        if port.device:
-            boards.append(port.device)
-
-    return boards
-
-
-def flash_board(board, firmware_path, config_path):
-    board = normalize_serial_port(board)
+def flash_board(firmware_path, config_path):
     firmware_path = validate_firmware(firmware_path)
     if config_path is not None:
         config_path = validate_config_file(config_path)
 
-    flash_firmware(board, firmware_path)
+    flash_firmware(firmware_path)
     time.sleep(FIRMWARE_RESTART_DELAY_SECONDS)
-    push_micro_files(board, config_path, clean=True)
+    push_micro_files(config_path, clean=True)
 
 
-def flash_firmware(board, firmware_path):
-    run_esptool(esptool_args(board, "erase_flash"))
-    run_esptool(esptool_args(board, "write_flash", "-z", "0x0", str(firmware_path)))
+def flash_firmware(firmware_path):
+    run_esptool(esptool_args("erase_flash"))
+    run_esptool(esptool_args("write_flash", "-z", "0x0", str(firmware_path)))
 
 
-def push_micro_files(board, config_path, clean=False):
+def push_micro_files(config_path, clean=False):
     if config_path is not None:
         config_path = validate_config_file(config_path)
 
     if clean:
-        run_mpremote(mpremote_args(board, "exec", CLEAN_BOARD_CODE))
+        run_mpremote(mpremote_args("exec", CLEAN_BOARD_CODE))
 
     for path in sorted(MICRO_DIR.glob("*.py")):
-        run_mpremote(mpremote_args(board, "cp", str(path), ":"))
+        run_mpremote(mpremote_args("cp", str(path), ":"))
 
     if config_path is not None:
-        run_mpremote(mpremote_args(board, "cp", str(config_path), ":config.json"))
-    run_mpremote(mpremote_args(board, "reset"))
+        run_mpremote(mpremote_args("cp", str(config_path), ":config.json"))
+    run_mpremote(mpremote_args("reset"))
 
 
-def mpremote_args(board, *args):
-    board = normalize_serial_port(board)
-    if board:
-        return ["connect", board] + list(args)
-
+def mpremote_args(*args):
     return list(args)
 
 
-def esptool_args(board, *args):
-    command = ["--chip", "esp32c3"]
-    board = normalize_serial_port(board)
-    if board:
-        command.extend(["--port", board])
-
-    return command + list(args)
+def esptool_args(*args):
+    return ["--chip", "esp32c3"] + list(args)
 
 
 def run_mpremote(args, capture=False):
@@ -340,14 +290,6 @@ def validate_firmware(path):
     if firmware_path.suffix.lower() != ".bin":
         raise ValueError("Firmware file must end in .bin.")
     return firmware_path
-
-
-def normalize_serial_port(board):
-    if board is None:
-        return None
-
-    board = str(board).strip()
-    return board or None
 
 
 def first_firmware_file():
