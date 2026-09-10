@@ -14,6 +14,7 @@ class WiFi:
         timeout_seconds=10,
         connected_led_value=0,
         failed_led_value=1,
+        hostname=DEFAULT_HOSTNAME,
     ):
         self.ssid = ssid
         self.password = password
@@ -21,11 +22,12 @@ class WiFi:
         self.timeout_seconds = timeout_seconds
         self.connected_led_value = connected_led_value
         self.failed_led_value = failed_led_value
+        self.hostname = hostname or DEFAULT_HOSTNAME
         self.wlan = network.WLAN(network.STA_IF)
 
     def connect(self):
         # Set this before activating the interface so DHCP and mDNS can use it.
-        network.hostname(DEFAULT_HOSTNAME)
+        network.hostname(self.hostname)
         self.wlan.active(True)
         # self.wlan.config(txpower=8.5)
         self.wlan.config(pm=network.WLAN.PM_NONE)

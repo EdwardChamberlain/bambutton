@@ -8,6 +8,7 @@ DEFAULT_CONFIG = {
     "wifi": {
         "ssid": "",
         "password": "",
+        "hostname": "bambutton",
         "timeout_seconds": 10,
     },
     "api": {

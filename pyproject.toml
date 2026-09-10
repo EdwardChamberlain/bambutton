@@ -47,6 +47,7 @@ packages = ["src/bambutton"]
 "micro/main.py" = "bambutton/micro/main.py"
 "micro/periodic_timer.py" = "bambutton/micro/periodic_timer.py"
 "micro/wifi.py" = "bambutton/micro/wifi.py"
+"micro/web_config.py" = "bambutton/micro/web_config.py"
 "micro/config_example.json" = "bambutton/micro/config_example.json"
 "firmware" = "bambutton/firmware"
 
@@ -66,5 +67,6 @@ include = [
   "/micro/main.py",
   "/micro/periodic_timer.py",
   "/micro/wifi.py",
+  "/micro/web_config.py",
   "/micro/config_example.json",
 ]

@@ -69,6 +69,20 @@ Key files:
 The firmware sets the board's network hostname to `bambutton` before connecting to Wi-Fi,
 so DHCP and mDNS-capable networks can identify it more easily.
 
+## Web Configuration
+
+After the board joins its configured Wi-Fi network, open `http://bambutton/` or
+the board's assigned IP address in a browser. The built-in configuration page
+can update the hostname, Wi-Fi credentials, Bambuddy API details, printer, and
+GPIO pins without a USB connection. Use **Load printers from Bambuddy** to
+populate the printer selector from the configured API.
+
+Saving settings writes the board's `config.json` and restarts the firmware so
+changes such as a new Wi-Fi network or hostname take effect. The debug page
+shows current network and application state without exposing the API key or
+Wi-Fi password. The page is available only on the existing Wi-Fi network; the
+firmware does not create an access point.
+
 ## Setup Assistant GUI
 
 For end users, use the built installer when available.

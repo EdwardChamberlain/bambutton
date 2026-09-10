@@ -2,6 +2,7 @@
   "wifi": {
     "ssid": "YOUR WIFI SSID",
     "password": "YOUR WIFI PASSWORD",
+    "hostname": "bambutton",
     "timeout_seconds": 10
   },
   "api": {

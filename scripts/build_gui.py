@@ -19,6 +19,7 @@ MICRO_FILES = [
     "main.py",
     "periodic_timer.py",
     "wifi.py",
+    "web_config.py",
     "config_example.json",
 ]
 

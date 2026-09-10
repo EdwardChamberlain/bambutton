@@ -31,6 +31,7 @@ DEFAULT_FIRMWARE_DIR = RESOURCE_ROOT / "firmware"
 
 GPIO_MIN = 0
 GPIO_MAX = 21
+DEFAULT_HOSTNAME = "bambutton"
 
 CLEAN_BOARD_CODE = """
 import os
@@ -171,6 +172,10 @@ def build_window(config):
                         sg.Input(str(config["button"]["pin"]), key="-BUTTON_PIN-", size=(8, 1), enable_events=True),
                     ],
                     [
+                        sg.Text("Hostname", size=(16, 1)),
+                        sg.Input(config["wifi"].get("hostname", DEFAULT_HOSTNAME), key="-HOSTNAME-", enable_events=True),
+                    ],
+                    [
                         sg.Text("Wi-Fi SSID", size=(16, 1)),
                         sg.Input(config["wifi"]["ssid"], key="-WIFI_SSID-", enable_events=True),
                     ],
@@ -205,7 +210,7 @@ def build_window(config):
 
 def load_existing_config():
     default = {
-        "wifi": {"ssid": "", "password": "", "timeout_seconds": 10},
+        "wifi": {"ssid": "", "password": "", "hostname": DEFAULT_HOSTNAME, "timeout_seconds": 10},
         "api": {"base_url": "", "key": ""},
         "printer": {"id": 1, "poll_interval_seconds": 3},
         "led": {"pin": 3, "flash_interval_ms": 250},
@@ -277,6 +282,9 @@ def collect_basic_errors(values, require_printer=True, require_firmware=True):
     if not values.get("-WIFI_SSID-", "").strip():
         errors.append("Enter a Wi-Fi SSID.")
 
+    if not valid_hostname(values.get("-HOSTNAME-", "")):
+        errors.append("Enter a hostname containing only letters, numbers, and hyphens.")
+
     return errors
 
 
@@ -329,6 +337,7 @@ def build_config(values, printers_by_label):
         "wifi": {
             "ssid": values["-WIFI_SSID-"].strip(),
             "password": values["-WIFI_PASSWORD-"],
+            "hostname": values["-HOSTNAME-"].strip(),
             "timeout_seconds": 10,
         },
         "api": {
@@ -491,6 +500,13 @@ def valid_host_port(value):
         return False
 
     return re.match(r"^[A-Za-z0-9_.-]+:[0-9]{1,5}$", value.strip()) is not None
+
+
+def valid_hostname(value):
+    if not value:
+        return False
+
+    return re.match(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?$", value.strip()) is not None
 
 
 def api_base_url_from_host(host):
