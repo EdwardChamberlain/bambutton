@@ -23,5 +23,8 @@
     "debounce_ms": 150,
     "pull": "down",
     "trigger": "rising"
+  },
+  "web": {
+    "password": "change-this-password"
   }
 }
