@@ -85,8 +85,9 @@ Saving settings writes the board's `config.json` and restarts the firmware so
 changes such as a new Wi-Fi network or hostname take effect. The debug page
 shows current network and application state without exposing the API key,
 Wi-Fi password, or web password. All routes, including the setup access point,
-require HTTP Basic authentication using the password in `web.password`. The
-default password is `bambutton`; change it from the configuration page or in
+require HTTP Basic authentication using username `admin` and the password in
+`web.password`. The default username is `admin` and the default password is
+`bambutton`; change the password from the configuration page or in
 `config.json` before relying on the web UI. If the board cannot connect to its
 configured Wi-Fi within the connection timeout, it starts a password-protected
 setup access point named `Bambutton-Setup` with password `bambutton`. Connect
