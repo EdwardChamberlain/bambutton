@@ -587,3 +587,12 @@ def _escape_html(value):
         .replace('"', "&quot;")
         .replace("'", "&#x27;")
     )
+
+
+def _basic_auth_header(password):
+    credentials = (WEB_AUTH_USERNAME + ":" + str(password)).encode("utf-8")
+    if hasattr(_base64, "b2a_base64"):
+        encoded = _base64.b2a_base64(credentials).strip()
+    else:
+        encoded = _base64.b64encode(credentials)
+    return "Basic " + encoded.decode("ascii")
