@@ -29,8 +29,8 @@ def should_flash_plate_clear():
     return PRINTER_AWAITING_PLATE_CLEAR and not PENDING_BUTTON_PRESS
 
 
-# Feed this only from the healthy main loop. If a network request or the
-# networking stack blocks, the board will reboot and reconnect from scratch.
+# Feed this from the main loop and during each bounded Wi-Fi attempt/backoff.
+# If a request or the networking stack blocks, the board will reboot.
 watchdog = machine.WDT(timeout=60_000)
 
 # -- Initialize LED flasher ---
