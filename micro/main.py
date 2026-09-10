@@ -16,19 +16,30 @@ PRINTER_AWAITING_PLATE_CLEAR = False
 PENDING_BUTTON_PRESS = False
 CHAMBER_LIGHT_IS_ON = True
 PRINTER_STATUS_UPDATE_REQUIRED = True
+network = None
 
-# Feed this only from the healthy main loop. If a network request or the
-# networking stack blocks, the board will reboot and reconnect from scratch.
+
+def should_flash_connection_failure():
+    # Keep the connection failure indication active during boot, before the
+    # Wi-Fi helper has been created, and whenever the interface drops later.
+    return network is None or not network.is_connected()
+
+
+def should_flash_plate_clear():
+    return PRINTER_AWAITING_PLATE_CLEAR and not PENDING_BUTTON_PRESS
+
+
+# Feed this from the main loop and during each bounded Wi-Fi attempt/backoff.
+# If a request or the networking stack blocks, the board will reboot.
 watchdog = machine.WDT(timeout=60_000)
 
 # -- Initialize LED flasher ---
 flasher = led_flasher.LedFlasher(
     pin_number=config["led"]["pin"],
-    should_flash=lambda: (
-        PRINTER_AWAITING_PLATE_CLEAR and not PENDING_BUTTON_PRESS
-    ),
+    should_flash=should_flash_plate_clear,
     interval_ms=config["led"]["flash_interval_ms"],
     inactive_value=lambda: CHAMBER_LIGHT_IS_ON,
+    fast_should_flash=should_flash_connection_failure,
 )
 flasher.start()
 
@@ -56,20 +67,14 @@ button.start()
 
 
 # -- Connect to Wi-Fi --
-try:
-    network = wifi.WiFi(
-        ssid=config["wifi"]["ssid"],
-        password=config["wifi"]["password"],
-        hostname=config["wifi"].get("hostname", wifi.DEFAULT_HOSTNAME),
-        status_led=None,
-        timeout_seconds=config["wifi"]["timeout_seconds"],
-    )
-    network.connect()
-
-except Exception as exc:
-    print("Wi-Fi connection failed:", exc)
-    flasher.on()
-    raise
+network = wifi.WiFi(
+    ssid=config["wifi"]["ssid"],
+    password=config["wifi"]["password"],
+    hostname=config["wifi"].get("hostname", wifi.DEFAULT_HOSTNAME),
+    status_led=None,
+    timeout_seconds=config["wifi"]["timeout_seconds"],
+)
+network.connect_forever(watchdog_feed=watchdog.feed)
 
 # -- Initialize API client --
 api = bambuddy_api.BambuddyAPI(
@@ -94,7 +99,7 @@ poll_timer.start()
 
 # --- Main loop handlers ---
 def with_network_connection(request):
-    network.ensure_connected()
+    network.ensure_connected(watchdog_feed=watchdog.feed)
     return request()
 
 

@@ -69,6 +69,10 @@ Key files:
 The firmware sets the board's network hostname to `bambutton` before connecting to Wi-Fi,
 so DHCP and mDNS-capable networks can identify it more easily.
 
+Wi-Fi connection timeouts apply to individual connection attempts. If the network is
+unavailable, the firmware keeps retrying every 10 seconds while the LED shows the
+connection-failure pattern.
+
 ## Web Configuration
 
 After the board joins its configured Wi-Fi network, open `http://bambutton/` or
@@ -286,7 +290,7 @@ Use GPIO numbers, not physical pin positions.
 - Do not feed 5V into an ESP32-C3 GPIO. ESP32-C3 GPIO is 3.3V logic.
 - If the button LED needs more current than a GPIO can safely provide, drive it through a transistor/MOSFET instead of directly from the GPIO.
 
-> Note: The LED state is tied to the printers chamber light state. Turning off the printer light turns off the standby light on the button!
+> Note: When Wi-Fi is unavailable, the LED blinks at twice the plate-clear alert rate to show the connection failure. When connected, its standby state is tied to the printer's chamber light state, so turning off the printer light turns off the standby light on the button.
 
 #### Power and USB:
 

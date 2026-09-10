@@ -3,11 +3,23 @@ import sys
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 
 WIFI_PATH = Path(__file__).parents[1] / "micro" / "wifi.py"
 
 
-def load_wifi_module(monkeypatch, events):
+def load_wifi_module(
+    monkeypatch,
+    events,
+    connect_results=None,
+    tick_increment_ms=0,
+    connection_states=None,
+):
+    connect_results = list(connect_results or [True])
+    connection_states = list(connection_states or [])
+    current_time_ms = 0
+
     class FakeWLAN:
         PM_NONE = "pm-none"
 
@@ -24,9 +36,18 @@ def load_wifi_module(monkeypatch, events):
 
         def connect(self, ssid, password):
             events.append(("connect", ssid, password))
-            self.connected = True
+            result = connect_results.pop(0)
+            if isinstance(result, BaseException):
+                raise result
+            self.connected = result
+
+        def disconnect(self):
+            events.append(("disconnect",))
+            self.connected = False
 
         def isconnected(self):
+            if connection_states:
+                self.connected = connection_states.pop(0)
             return self.connected
 
         def ifconfig(self):
@@ -36,10 +57,19 @@ def load_wifi_module(monkeypatch, events):
         events.append(("hostname", hostname))
 
     fake_network = SimpleNamespace(STA_IF=0, WLAN=FakeWLAN, hostname=set_hostname)
+
+    def ticks_ms():
+        nonlocal current_time_ms
+        current_time_ms += tick_increment_ms
+        return current_time_ms
+
+    def sleep(seconds):
+        events.append(("sleep", seconds))
+
     fake_time = SimpleNamespace(
-        ticks_ms=lambda: 0,
+        ticks_ms=ticks_ms,
         ticks_diff=lambda current, start: current - start,
-        sleep=lambda seconds: None,
+        sleep=sleep,
     )
     monkeypatch.setitem(sys.modules, "network", fake_network)
     monkeypatch.setitem(sys.modules, "time", fake_time)
@@ -80,3 +110,87 @@ def test_connect_uses_configured_hostname(monkeypatch):
     wifi_module.WiFi("ssid", "password", hostname="shop-button").connect()
 
     assert events[0] == ("hostname", "shop-button")
+
+
+def test_connect_raises_connection_timeout_after_attempt_deadline(monkeypatch):
+    events = []
+    wifi_module = load_wifi_module(
+        monkeypatch,
+        events,
+        connect_results=[False],
+        tick_increment_ms=10_001,
+    )
+
+    wifi = wifi_module.WiFi("ssid", "password", timeout_seconds=10)
+
+    with pytest.raises(wifi_module.ConnectionTimeout, match="timed out"):
+        wifi.connect()
+
+
+def test_connect_forever_retries_after_ten_second_backoff(monkeypatch):
+    events = []
+    wifi_module = load_wifi_module(
+        monkeypatch,
+        events,
+        connect_results=[False, True],
+        tick_increment_ms=10_001,
+    )
+    watchdog_feeds = []
+    wifi = wifi_module.WiFi("ssid", "password", timeout_seconds=10)
+
+    wlan = wifi.connect_forever(watchdog_feed=lambda: watchdog_feeds.append(True))
+
+    assert wlan.isconnected()
+    assert events.count(("connect", "ssid", "password")) == 2
+    assert events.count(("disconnect",)) == 1
+    assert sum(item[1] for item in events if item[0] == "sleep") == 10
+    assert watchdog_feeds
+
+
+def test_connect_forever_retries_after_wlan_oserror(monkeypatch):
+    events = []
+    wifi_module = load_wifi_module(
+        monkeypatch,
+        events,
+        connect_results=[OSError("Wifi Internal Error"), True],
+    )
+    watchdog_feeds = []
+    wifi = wifi_module.WiFi("ssid", "password")
+
+    wlan = wifi.connect_forever(watchdog_feed=lambda: watchdog_feeds.append(True))
+
+    assert wlan.isconnected()
+    assert events.count(("connect", "ssid", "password")) == 2
+    assert events.count(("disconnect",)) == 1
+    assert sum(item[1] for item in events if item[0] == "sleep") == 10
+    assert len(watchdog_feeds) >= 10
+
+
+def test_connect_feeds_watchdog_while_waiting_for_wifi(monkeypatch):
+    events = []
+    wifi_module = load_wifi_module(
+        monkeypatch,
+        events,
+        connect_results=[False],
+        tick_increment_ms=1,
+        connection_states=[False, False, True],
+    )
+    watchdog_feeds = []
+    wifi = wifi_module.WiFi("ssid", "password")
+
+    assert wifi.connect(watchdog_feed=lambda: watchdog_feeds.append(True))
+    assert watchdog_feeds
+
+
+def test_ensure_connected_retries_until_wifi_returns(monkeypatch):
+    events = []
+    wifi_module = load_wifi_module(
+        monkeypatch,
+        events,
+        connect_results=[False, True],
+        tick_increment_ms=10_001,
+    )
+    wifi = wifi_module.WiFi("ssid", "password", timeout_seconds=10)
+    wifi.wlan.connected = False
+
+    assert wifi.ensure_connected().isconnected()
