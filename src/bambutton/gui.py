@@ -60,13 +60,7 @@ def main():
             update_action_states(window, values)
 
             if event == "-FLASH-":
-                try:
-                    firmware_path = validate_firmware(first_firmware_file())
-                    config_path = config_path_for_mode(values)
-                    flash_board(firmware_path, config_path)
-                    sg.popup("Firmware and project files flashed.")
-                except Exception as exc:
-                    sg.popup_error("Could not flash firmware", str(exc))
+                handle_flash(window, values)
     finally:
         window.close()
 
@@ -140,6 +134,15 @@ def build_window():
                 "Flash",
                 [
                     [
+                        sg.Text(
+                            "Ready",
+                            key="-STATUS-",
+                            expand_x=True,
+                            justification="center",
+                            pad=(0, 4),
+                        )
+                    ],
+                    [
                         sg.Button(
                             "Flash",
                             key="-FLASH-",
@@ -162,6 +165,25 @@ def build_window():
     window = sg.Window("Bambutton Setup", layout, finalize=True)
     update_action_states(window, window.read(timeout=0)[1])
     return window
+
+
+def handle_flash(window, values):
+    window["-FLASH-"].update(disabled=True)
+    window["-STATUS-"].update(value="Flashing...")
+    window.refresh()
+
+    try:
+        firmware_path = validate_firmware(first_firmware_file())
+        config_path = config_path_for_mode(values)
+        flash_board(firmware_path, config_path)
+    except Exception as exc:
+        window["-STATUS-"].update(value="Flash failed; see the error dialog.")
+        sg.popup_error("Could not flash firmware", str(exc))
+    else:
+        window["-STATUS-"].update(value="Flash complete.")
+        sg.popup("Firmware and project files flashed.")
+    finally:
+        update_action_states(window, values)
 
 
 def update_action_states(window, values):

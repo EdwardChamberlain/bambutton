@@ -63,6 +63,50 @@ def test_update_action_states_disables_config_controls_in_web_mode(tmp_path):
     assert window.elements["-FLASH-"].updates[-1] == {"disabled": False}
 
 
+def test_handle_flash_shows_progress_before_flashing(tmp_path, monkeypatch):
+    class Element:
+        def __init__(self):
+            self.updates = []
+
+        def update(self, **kwargs):
+            self.updates.append(kwargs)
+
+    class Window:
+        def __init__(self):
+            self.elements = {
+                key: Element()
+                for key in ("-CONFIG_PATH-", "-CONFIG_BROWSE-", "-FLASH-", "-STATUS-")
+            }
+            self.refresh_calls = 0
+
+        def __getitem__(self, key):
+            return self.elements[key]
+
+        def refresh(self):
+            self.refresh_calls += 1
+
+    firmware_path = tmp_path / "firmware.bin"
+    firmware_path.write_bytes(b"firmware")
+    events = []
+    window = Window()
+
+    monkeypatch.setattr(gui, "first_firmware_file", lambda: firmware_path)
+    monkeypatch.setattr(gui, "config_path_for_mode", lambda values: None)
+    monkeypatch.setattr(gui, "flash_board", lambda firmware, config: events.append((firmware, config)))
+    monkeypatch.setattr(gui.sg, "popup", lambda *args: None, raising=False)
+
+    gui.handle_flash(window, {"-WEB-": True})
+
+    assert events == [(firmware_path, None)]
+    assert window.refresh_calls == 1
+    assert window.elements["-STATUS-"].updates == [
+        {"value": "Flashing..."},
+        {"value": "Flash complete."},
+    ]
+    assert window.elements["-FLASH-"].updates[0] == {"disabled": True}
+    assert window.elements["-FLASH-"].updates[-1] == {"disabled": False}
+
+
 def test_config_setup_requires_a_json_object(tmp_path):
     config_path = tmp_path / "saved-config.json"
     config_path.write_text(json.dumps({"wifi": {"ssid": "shop"}}))
