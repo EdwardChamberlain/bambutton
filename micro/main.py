@@ -67,19 +67,14 @@ button.start()
 
 
 # -- Connect to Wi-Fi --
-try:
-    network = wifi.WiFi(
-        ssid=config["wifi"]["ssid"],
-        password=config["wifi"]["password"],
-        hostname=config["wifi"].get("hostname", wifi.DEFAULT_HOSTNAME),
-        status_led=None,
-        timeout_seconds=config["wifi"]["timeout_seconds"],
-    )
-    network.connect()
-
-except Exception as exc:
-    print("Wi-Fi connection failed:", exc)
-    raise
+network = wifi.WiFi(
+    ssid=config["wifi"]["ssid"],
+    password=config["wifi"]["password"],
+    hostname=config["wifi"].get("hostname", wifi.DEFAULT_HOSTNAME),
+    status_led=None,
+    timeout_seconds=config["wifi"]["timeout_seconds"],
+)
+network.connect_forever(watchdog_feed=watchdog.feed)
 
 # -- Initialize API client --
 api = bambuddy_api.BambuddyAPI(
@@ -104,7 +99,7 @@ poll_timer.start()
 
 # --- Main loop handlers ---
 def with_network_connection(request):
-    network.ensure_connected()
+    network.ensure_connected(watchdog_feed=watchdog.feed)
     return request()
 
 
