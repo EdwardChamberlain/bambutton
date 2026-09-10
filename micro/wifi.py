@@ -51,7 +51,7 @@ class WiFi:
         while True:
             try:
                 return self.connect(watchdog_feed=watchdog_feed)
-            except ConnectionTimeout as exc:
+            except (ConnectionTimeout, OSError) as exc:
                 print("Wi-Fi connection failed:", exc)
                 self.disconnect()
                 self._sleep_before_retry(watchdog_feed)
