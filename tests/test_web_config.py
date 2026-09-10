@@ -44,6 +44,13 @@ def test_parse_form_decodes_url_encoded_values():
     }
 
 
+def test_parse_form_decodes_utf8_values():
+    assert web_config.parse_form("wifi_ssid=Caf%C3%A9&wifi_password=p%C3%A5ss") == {
+        "wifi_ssid": "Café",
+        "wifi_password": "påss",
+    }
+
+
 def test_build_config_updates_web_fields_and_preserves_other_settings():
     current = base_config()
 
@@ -107,7 +114,7 @@ def test_config_page_contains_form_and_does_not_require_formatting_js():
 
     assert 'action="/save"' in page
     assert 'name="hostname"' in page
-    assert 'fetch("/api/printers")' in page
+    assert 'fetch("/api/printers", {' in page
     assert "__HOSTNAME__" not in page
 
 
@@ -138,3 +145,39 @@ def test_save_request_sets_restart_flag_and_returns_updated_page(tmp_path):
     assert server.restart_requested is True
     assert "shop-button" in page
     assert json.loads((tmp_path / "config.json").read_text())["printer"]["id"] == 7
+
+
+def test_printer_discovery_uses_submitted_api_settings():
+    calls = []
+
+    class FakeAPI:
+        def __init__(self, api_key, base_url, request_timeout_seconds):
+            calls.append((api_key, base_url, request_timeout_seconds))
+
+        def get_printers(self):
+            return [{"id": 7, "friendly_name": "New API printer"}]
+
+    server = object.__new__(web_config.WebConfigServer)
+    server.config = base_config()
+    server.api = FakeAPI("old-key", "http://old-host:8000/api/v1", 3)
+    server.status_provider = lambda: {}
+    server.restart_requested = False
+
+    status, content_type, body = server.handle_request(
+        "POST",
+        "/api/printers",
+        "api_base_url=http%3A%2F%2Fnew-host%3A8000%2Fapi%2Fv1&api_key=new-key",
+    )
+
+    assert status == 200
+    assert content_type == "application/json"
+    assert "New API printer" in body
+    assert calls[-1] == ("new-key", "http://new-host:8000/api/v1", 3)
+
+
+def test_config_page_preserves_printer_selection_when_loading_printers():
+    page = web_config.render_config_page(base_config())
+
+    assert 'const currentPrinterId = String(printerSelect.value);' in page
+    assert 'option.selected = String(printer.id) === currentPrinterId;' in page
+    assert 'Current printer (" + currentPrinterId + ", not returned)' in page

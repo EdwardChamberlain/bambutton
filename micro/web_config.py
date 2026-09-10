@@ -103,10 +103,13 @@ class WebConfigServer:
         if method == "GET" and route == "/debug":
             return 200, "text/html; charset=utf-8", render_debug_page(self.config, self.status_provider())
 
-        if method == "GET" and route == "/api/printers":
+        if method in ("GET", "POST") and route == "/api/printers":
             try:
-                printers = self.api.get_printers()
+                form = parse_form(body) if method == "POST" else {}
+                printers = self._get_printers(form)
                 return 200, "application/json", _json_dumps(printers)
+            except ValueError as exc:
+                return 400, "application/json", _json_dumps({"error": str(exc)})
             except Exception as exc:
                 return 502, "application/json", _json_dumps({"error": str(exc)})
 
@@ -125,6 +128,19 @@ class WebConfigServer:
             )
 
         return 404, "text/html; charset=utf-8", _error_page("Not found", "The requested page does not exist.")
+
+    def _get_printers(self, form):
+        if not form:
+            return self.api.get_printers()
+
+        api_config = self.config.get("api", {})
+        base_url = _required_url(
+            _required_text(form, "api_base_url", api_config.get("base_url", ""), "API base URL")
+        )
+        api_key = _optional_secret(form, "api_key", api_config.get("key", ""))
+        request_timeout = api_config.get("request_timeout_seconds", 3)
+        api_client = self.api.__class__(api_key, base_url, request_timeout)
+        return api_client.get_printers()
 
 
 def parse_form(body):
@@ -217,7 +233,7 @@ def render_config_page(config, message=""):
           <fieldset>
             <legend>Bambuddy API</legend>
             <label>Base URL <input name="api_base_url" value="__BASE_URL__" required></label>
-            <label>API key <input type="password" name="api_key" placeholder="Leave blank to keep current"></label>
+            <label>API key <input id="api_key" type="password" name="api_key" placeholder="Leave blank to keep current"></label>
             <label>Printer
               <select id="printer_id" name="printer_id" required>
                 <option value="__PRINTER_ID__">Current printer (__PRINTER_ID__)</option>
@@ -240,19 +256,38 @@ def render_config_page(config, message=""):
           document.getElementById("load-printers").addEventListener("click", async () => {
             printerStatus.textContent = "Loading...";
             try {
-              const response = await fetch("/api/printers");
+              const currentPrinterId = String(printerSelect.value);
+              const requestBody = new URLSearchParams();
+              requestBody.set("api_base_url", document.querySelector("[name=api_base_url]").value);
+              const apiKey = document.getElementById("api_key").value;
+              if (apiKey) requestBody.set("api_key", apiKey);
+              const response = await fetch("/api/printers", {
+                method: "POST",
+                headers: {"Content-Type": "application/x-www-form-urlencoded"},
+                body: requestBody,
+              });
               const data = await response.json();
               if (!response.ok) throw new Error(data.error || "Bambuddy rejected the request");
               const printers = Array.isArray(data) ? data : (data.printers || data.results || data.items || []);
+              const validPrinters = printers.filter((printer) => printer.id !== undefined);
+              if (!validPrinters.length) throw new Error("No printers returned by Bambuddy");
               printerSelect.replaceChildren();
-              printers.forEach((printer) => {
-                if (printer.id === undefined) return;
+              let currentPrinterFound = false;
+              validPrinters.forEach((printer) => {
                 const option = document.createElement("option");
                 option.value = printer.id;
+                option.selected = String(printer.id) === currentPrinterId;
+                currentPrinterFound = currentPrinterFound || option.selected;
                 option.textContent = (printer.friendly_name || printer.name || printer.display_name || "Printer") + " (" + printer.id + ")";
                 printerSelect.appendChild(option);
               });
-              if (!printers.length) throw new Error("No printers returned by Bambuddy");
+              if (!currentPrinterFound && currentPrinterId) {
+                const option = document.createElement("option");
+                option.value = currentPrinterId;
+                option.textContent = "Current printer (" + currentPrinterId + ", not returned)";
+                option.selected = true;
+                printerSelect.insertBefore(option, printerSelect.firstChild);
+              }
               printerStatus.textContent = " Loaded.";
             } catch (error) {
               printerStatus.textContent = " " + error.message;
@@ -474,19 +509,19 @@ def _json_dumps(value):
 
 def _url_decode(value):
     value = value.replace("+", " ")
-    result = []
+    result = bytearray()
     index = 0
     while index < len(value):
         if value[index] == "%" and index + 2 < len(value):
             try:
-                result.append(chr(int(value[index + 1 : index + 3], 16)))
+                result.append(int(value[index + 1 : index + 3], 16))
                 index += 3
                 continue
             except ValueError:
                 pass
-        result.append(value[index])
+        result.extend(value[index].encode("utf-8"))
         index += 1
-    return "".join(result)
+    return result.decode("utf-8")
 
 
 def _escape_html(value):
