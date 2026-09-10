@@ -54,7 +54,7 @@ def main():
     try:
         while True:
             event, values = window.read(timeout=250)
-            if event in (sg.WIN_CLOSED, "Exit"):
+            if event == sg.WIN_CLOSED:
                 break
 
             if event in ("-WEB-", "-CONFIG-", "-CONFIG_PATH-", "-CONFIG_BROWSE-"):
@@ -201,17 +201,6 @@ def build_window():
                 pad=(0, (0, 6)),
                 button_color=("#FFFFFF", primary_button_color),
                 mouseover_colors=("#FFFFFF", primary_button_color),
-                font=("Helvetica", 10, "bold"),
-            )
-        ],
-        [
-            sg.Button(
-                "Exit",
-                size=(12, 1),
-                expand_x=True,
-                pad=(0, 0),
-                button_color=(text_color, secondary_button_color),
-                mouseover_colors=(text_color, secondary_button_color),
                 font=("Helvetica", 10, "bold"),
             )
         ],
