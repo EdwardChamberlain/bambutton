@@ -57,7 +57,8 @@ def main():
             if event in (sg.WIN_CLOSED, "Exit"):
                 break
 
-            update_action_states(window, values)
+            if event in ("-WEB-", "-CONFIG-", "-CONFIG_PATH-", "-CONFIG_BROWSE-"):
+                update_action_states(window, values)
 
             if event == "-FLASH-":
                 handle_flash(window, values)
@@ -237,10 +238,10 @@ def handle_flash(window, values):
         window["-STATUS-"].update(value="Flash complete.")
         sg.popup("Firmware and project files flashed.")
     finally:
-        update_action_states(window, values)
+        update_action_states(window, values, update_status=False)
 
 
-def update_action_states(window, values):
+def update_action_states(window, values, update_status=True):
     values = values or {}
     config_mode = values.get("-CONFIG-", False)
 
@@ -249,6 +250,10 @@ def update_action_states(window, values):
 
     errors = collect_basic_errors(values)
     window["-FLASH-"].update(disabled=bool(errors))
+
+    if update_status:
+        status = "Select a config.json file to continue." if errors else "Ready"
+        window["-STATUS-"].update(value=status)
 
 
 def collect_basic_errors(values):

@@ -40,7 +40,10 @@ def test_update_action_states_disables_config_controls_in_web_mode(tmp_path):
 
     class Window:
         def __init__(self):
-            self.elements = {key: Element() for key in ("-CONFIG_PATH-", "-CONFIG_BROWSE-", "-FLASH-")}
+            self.elements = {
+                key: Element()
+                for key in ("-CONFIG_PATH-", "-CONFIG_BROWSE-", "-FLASH-", "-STATUS-")
+            }
 
         def __getitem__(self, key):
             return self.elements[key]
@@ -53,6 +56,7 @@ def test_update_action_states_disables_config_controls_in_web_mode(tmp_path):
     assert window.elements["-CONFIG_PATH-"].updates[-1] == {"disabled": True}
     assert window.elements["-CONFIG_BROWSE-"].updates[-1] == {"disabled": True}
     assert window.elements["-FLASH-"].updates[-1] == {"disabled": False}
+    assert window.elements["-STATUS-"].updates[-1] == {"value": "Ready"}
 
     gui.update_action_states(
         window,
@@ -61,6 +65,35 @@ def test_update_action_states_disables_config_controls_in_web_mode(tmp_path):
     assert window.elements["-CONFIG_PATH-"].updates[-1] == {"disabled": False}
     assert window.elements["-CONFIG_BROWSE-"].updates[-1] == {"disabled": False}
     assert window.elements["-FLASH-"].updates[-1] == {"disabled": False}
+    assert window.elements["-STATUS-"].updates[-1] == {"value": "Ready"}
+
+
+def test_update_action_states_prompts_for_config_file():
+    class Element:
+        def __init__(self):
+            self.updates = []
+
+        def update(self, **kwargs):
+            self.updates.append(kwargs)
+
+    class Window:
+        def __init__(self):
+            self.elements = {
+                key: Element()
+                for key in ("-CONFIG_PATH-", "-CONFIG_BROWSE-", "-FLASH-", "-STATUS-")
+            }
+
+        def __getitem__(self, key):
+            return self.elements[key]
+
+    window = Window()
+
+    gui.update_action_states(window, {"-CONFIG-": True})
+
+    assert window.elements["-FLASH-"].updates[-1] == {"disabled": True}
+    assert window.elements["-STATUS-"].updates[-1] == {
+        "value": "Select a config.json file to continue."
+    }
 
 
 def test_handle_flash_shows_progress_before_flashing(tmp_path, monkeypatch):
