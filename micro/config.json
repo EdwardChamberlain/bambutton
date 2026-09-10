@@ -26,6 +26,6 @@
     "trigger": "rising"
   },
   "web": {
-    "password": "change-this-password"
+    "password": "bambutton"
   }
 }
