@@ -72,7 +72,7 @@ def main():
 
 
 def build_window():
-    sg.theme("LightBlue3")
+    sg.theme("DarkBlue3")
     sg.set_options(
         font=("Helvetica", 11),
         element_padding=(8, 6),
