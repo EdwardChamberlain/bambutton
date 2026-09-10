@@ -71,10 +71,15 @@ network = wifi.WiFi(
     ssid=config["wifi"]["ssid"],
     password=config["wifi"]["password"],
     hostname=config["wifi"].get("hostname", wifi.DEFAULT_HOSTNAME),
+    ap_ssid=config["wifi"].get("ap_ssid", wifi.DEFAULT_AP_SSID),
+    ap_password=config["wifi"].get("ap_password", wifi.DEFAULT_AP_PASSWORD),
     status_led=None,
     timeout_seconds=config["wifi"]["timeout_seconds"],
 )
-network.connect_forever(watchdog_feed=watchdog.feed)
+network.connect_with_fallback(watchdog_feed=watchdog.feed)
+if network.is_ap_mode():
+    print("Wi-Fi unavailable; connect to the setup access point to update settings")
+    flasher.on()
 
 # -- Initialize API client --
 api = bambuddy_api.BambuddyAPI(
@@ -99,7 +104,12 @@ poll_timer.start()
 
 # --- Main loop handlers ---
 def with_network_connection(request):
-    network.ensure_connected(watchdog_feed=watchdog.feed)
+    if network.is_ap_mode():
+        raise RuntimeError("Wi-Fi setup access point is active")
+
+    network.ensure_connected(watchdog_feed=watchdog.feed, fallback_to_ap=True)
+    if network.is_ap_mode():
+        raise RuntimeError("Wi-Fi setup access point is active")
     return request()
 
 
@@ -145,6 +155,7 @@ def debug_status():
         network_config = ("unavailable: {}".format(exc),)
 
     return {
+        "Network mode": network.mode(),
         "Wi-Fi connected": network.is_connected(),
         "IP address": network_config[0] if network_config else "unavailable",
         "Awaiting plate clear": PRINTER_AWAITING_PLATE_CLEAR,
@@ -176,11 +187,11 @@ while True:
         machine.reset()
 
     # Push button press to API if pending
-    if PENDING_BUTTON_PRESS:
+    if not network.is_ap_mode() and PENDING_BUTTON_PRESS:
         handle_pending_button_press()
 
     # Check printer status
-    if PRINTER_STATUS_UPDATE_REQUIRED:
+    if not network.is_ap_mode() and PRINTER_STATUS_UPDATE_REQUIRED:
         handle_printer_status_update()
 
     time.sleep_ms(25)

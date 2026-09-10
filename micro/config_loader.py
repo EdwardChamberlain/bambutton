@@ -10,6 +10,8 @@ DEFAULT_CONFIG = {
         "password": "",
         "hostname": "bambutton",
         "timeout_seconds": 10,
+        "ap_ssid": "Bambutton-Setup",
+        "ap_password": "bambutton",
     },
     "api": {
         "base_url": "",
