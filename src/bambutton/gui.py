@@ -72,7 +72,12 @@ def main():
 
 
 def build_window():
-    sg.theme("SystemDefault")
+    sg.theme("LightBlue3")
+    sg.set_options(
+        font=("Helvetica", 11),
+        element_padding=(6, 5),
+        margins=(18, 18),
+    )
 
     layout = [
         [
@@ -86,8 +91,14 @@ def build_window():
                             default=True,
                             key="-WEB-",
                             enable_events=True,
+                            size=(24, 1),
+                            pad=(0, 5),
                         ),
-                        sg.Text("Flash generic firmware, then configure the board in its web GUI."),
+                        sg.Text(
+                            "Flash generic firmware, then configure the board in its web GUI.",
+                            expand_x=True,
+                            pad=(12, 5),
+                        ),
                     ],
                     [
                         sg.Radio(
@@ -95,10 +106,17 @@ def build_window():
                             "SETUP_MODE",
                             key="-CONFIG-",
                             enable_events=True,
+                            size=(24, 1),
+                            pad=(0, 5),
                         ),
-                        sg.Text("Flash generic firmware with an existing config.json file."),
+                        sg.Text(
+                            "Flash generic firmware with an existing config.json file.",
+                            expand_x=True,
+                            pad=(12, 5),
+                        ),
                     ],
                 ],
+                pad=(0, 8),
                 expand_x=True,
             )
         ],
@@ -120,6 +138,7 @@ def build_window():
                 ],
                 key="-CONFIG_FRAME-",
                 visible=False,
+                pad=(0, 8),
                 expand_x=True,
             )
         ],
@@ -127,9 +146,29 @@ def build_window():
             sg.Frame(
                 "Flash",
                 [
-                    [sg.Button("Flash", key="-FLASH-", disabled=True), sg.Button("Exit")],
-                    [sg.Text("", key="-VALIDATION-", text_color="firebrick", size=(72, 2))],
+                    [
+                        sg.Button(
+                            "Flash",
+                            key="-FLASH-",
+                            disabled=True,
+                            size=(12, 1),
+                            expand_x=True,
+                            pad=(0, 6),
+                        )
+                    ],
+                    [
+                        sg.Text(
+                            "",
+                            key="-VALIDATION-",
+                            text_color="firebrick",
+                            size=(72, 2),
+                            expand_x=True,
+                            pad=(0, 8),
+                        )
+                    ],
+                    [sg.Text("", expand_x=True), sg.Button("Exit", size=(12, 1), pad=(0, 6))],
                 ],
+                pad=(0, 8),
                 expand_x=True,
             )
         ],
