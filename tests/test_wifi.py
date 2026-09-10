@@ -24,6 +24,7 @@ def load_wifi_module(
         PM_NONE = "pm-none"
 
         def __init__(self, interface):
+            self.interface = interface
             self.connected = False
             self.config_calls = []
 
@@ -51,12 +52,19 @@ def load_wifi_module(
             return self.connected
 
         def ifconfig(self):
+            if self.interface == 1:
+                return ("192.168.4.1", "255.255.255.0", "192.168.4.1", "192.168.4.1")
             return ("192.168.1.20", "255.255.255.0", "192.168.1.1", "192.168.1.1")
 
     def set_hostname(hostname):
         events.append(("hostname", hostname))
 
-    fake_network = SimpleNamespace(STA_IF=0, WLAN=FakeWLAN, hostname=set_hostname)
+    fake_network = SimpleNamespace(
+        STA_IF=0,
+        AP_IF=1,
+        WLAN=FakeWLAN,
+        hostname=set_hostname,
+    )
 
     def ticks_ms():
         nonlocal current_time_ms
@@ -194,3 +202,27 @@ def test_ensure_connected_retries_until_wifi_returns(monkeypatch):
     wifi.wlan.connected = False
 
     assert wifi.ensure_connected().isconnected()
+
+
+def test_connect_with_fallback_starts_setup_access_point_after_timeout(monkeypatch):
+    events = []
+    wifi_module = load_wifi_module(
+        monkeypatch,
+        events,
+        connect_results=[False],
+        tick_increment_ms=10_001,
+    )
+    wifi = wifi_module.WiFi("ssid", "password", timeout_seconds=10)
+
+    access_point = wifi.connect_with_fallback()
+
+    assert access_point.interface == 1
+    assert wifi.is_ap_mode() is True
+    assert wifi.mode() == "access point"
+    assert wifi.ifconfig()[0] == "192.168.4.1"
+    assert ("active", False) in events
+    assert ("config", {
+        "essid": "Bambutton-Setup",
+        "password": "bambutton",
+    }) in events
+    assert wifi.ensure_connected() is access_point

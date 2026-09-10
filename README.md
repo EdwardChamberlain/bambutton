@@ -87,8 +87,13 @@ shows current network and application state without exposing the API key,
 Wi-Fi password, or web password. The page and all of its routes require HTTP
 Basic authentication using the password in the `web.password` setting. The
 default password is `bambutton`; change it from the configuration page or in
-`config.json` before relying on the web UI. The page is available only on the
-existing Wi-Fi network; the firmware does not create an access point.
+`config.json` before relying on the web UI. If the board cannot connect to its
+configured Wi-Fi within the connection timeout, it starts a password-protected
+setup access point named `Bambutton-Setup` with password `bambutton`. Connect
+to that network and open `http://192.168.4.1/` to correct the Wi-Fi settings.
+Saving settings restarts the board so it can retry the configured network. The
+setup network's SSID and password can be changed in `wifi.ap_ssid` and
+`wifi.ap_password` before flashing the configuration.
 
 ## Setup Assistant GUI
 
@@ -148,7 +153,9 @@ Manual users can edit `micro/config.json` before copying the files to the board:
   "wifi": {
     "ssid": "your-wifi-ssid",
     "password": "your-wifi-password",
-    "timeout_seconds": 10
+    "timeout_seconds": 10,
+    "ap_ssid": "Bambutton-Setup",
+    "ap_password": "bambutton"
   },
   "api": {
     "base_url": "http://your-server-ip:8000/api/v1",

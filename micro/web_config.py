@@ -19,11 +19,11 @@ MAX_REQUEST_BYTES = 8192
 
 
 class WebConfigServer:
-    """Small LAN-only configuration server for the MicroPython board.
+    """Small polled configuration server for the MicroPython board.
 
     The server is deliberately polled from the main loop instead of running a
     second thread. That keeps configuration writes and application state in one
-    execution context and avoids adding an AP or any extra runtime service.
+    execution context while the server is available on station or AP Wi-Fi.
     """
 
     def __init__(
@@ -258,7 +258,7 @@ def render_config_page(config, message=""):
 
     content = """
         <h1>Bambutton configuration</h1>
-        <p>Configure this board over the existing Wi-Fi network. Changes are saved to the board and applied after restart.</p>
+        <p>Configure this board over Wi-Fi. Changes are saved to the board and applied after restart.</p>
         __SAVED_MESSAGE__
         <form method="post" action="/save">
           <fieldset>
