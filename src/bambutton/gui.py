@@ -66,7 +66,7 @@ def main():
 
             elif event == "-FLASH-":
                 try:
-                    board = require_board(values.get("-BOARD-"))
+                    board = normalize_serial_port(values.get("-BOARD-"))
                     firmware_path = validate_firmware(first_firmware_file())
                     config_path = config_path_for_mode(values)
                     flash_board(board, firmware_path, config_path)
@@ -113,10 +113,11 @@ def build_window():
                 "Board",
                 [
                     [
-                        sg.Text("Serial port", size=(16, 1)),
-                        sg.Combo([], key="-BOARD-", readonly=True, size=(36, 1), enable_events=True),
+                        sg.Text("Serial port (optional)", size=(20, 1)),
+                        sg.Combo([], key="-BOARD-", size=(32, 1), enable_events=True),
                         sg.Button("Refresh boards", key="-REFRESH_BOARDS-"),
                     ],
+                    [sg.Text("Leave blank to auto-detect the connected ESP32-C3.")],
                 ],
                 expand_x=True,
             )
@@ -175,9 +176,6 @@ def update_action_states(window, values):
 def collect_basic_errors(values):
     errors = []
 
-    if not values.get("-BOARD-"):
-        errors.append("Refresh boards and select a board.")
-
     if values.get("-CONFIG-"):
         try:
             validate_config_file(values.get("-CONFIG_PATH-", ""))
@@ -234,7 +232,7 @@ def list_boards():
 
 
 def flash_board(board, firmware_path, config_path):
-    board = require_board(board)
+    board = normalize_serial_port(board)
     firmware_path = validate_firmware(firmware_path)
     if config_path is not None:
         config_path = validate_config_file(config_path)
@@ -245,19 +243,8 @@ def flash_board(board, firmware_path, config_path):
 
 
 def flash_firmware(board, firmware_path):
-    run_esptool(["--chip", "esp32c3", "--port", board, "erase_flash"])
-    run_esptool(
-        [
-            "--chip",
-            "esp32c3",
-            "--port",
-            board,
-            "write_flash",
-            "-z",
-            "0x0",
-            str(firmware_path),
-        ]
-    )
+    run_esptool(esptool_args(board, "erase_flash"))
+    run_esptool(esptool_args(board, "write_flash", "-z", "0x0", str(firmware_path)))
 
 
 def push_micro_files(board, config_path, clean=False):
@@ -276,7 +263,20 @@ def push_micro_files(board, config_path, clean=False):
 
 
 def mpremote_args(board, *args):
-    return ["connect", board] + list(args)
+    board = normalize_serial_port(board)
+    if board:
+        return ["connect", board] + list(args)
+
+    return list(args)
+
+
+def esptool_args(board, *args):
+    command = ["--chip", "esp32c3"]
+    board = normalize_serial_port(board)
+    if board:
+        command.extend(["--port", board])
+
+    return command + list(args)
 
 
 def run_mpremote(args, capture=False):
@@ -342,10 +342,12 @@ def validate_firmware(path):
     return firmware_path
 
 
-def require_board(board):
-    if not board:
-        raise ValueError("Refresh boards and select a board.")
-    return board
+def normalize_serial_port(board):
+    if board is None:
+        return None
+
+    board = str(board).strip()
+    return board or None
 
 
 def first_firmware_file():

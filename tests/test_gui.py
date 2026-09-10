@@ -22,6 +22,10 @@ def test_web_setup_uses_firmware_defaults_without_a_saved_config():
     assert gui.config_path_for_mode({"-WEB-": True}) is None
 
 
+def test_serial_port_is_optional_for_web_setup():
+    assert gui.collect_basic_errors({"-WEB-": True}) == []
+
+
 def test_config_setup_requires_a_json_object(tmp_path):
     config_path = tmp_path / "saved-config.json"
     config_path.write_text(json.dumps({"wifi": {"ssid": "shop"}}))
@@ -77,6 +81,26 @@ def test_push_micro_files_omits_config_for_web_gui_setup(tmp_path, monkeypatch):
     gui.push_micro_files("/dev/tty.button", None, clean=True)
 
     assert [call[2] for call in calls] == ["exec", "cp", "reset"]
+
+
+def test_mpremote_args_uses_auto_detection_when_port_is_blank():
+    assert gui.mpremote_args("", "reset") == ["reset"]
+    assert gui.mpremote_args("/dev/tty.button", "reset") == [
+        "connect",
+        "/dev/tty.button",
+        "reset",
+    ]
+
+
+def test_esptool_args_only_includes_port_when_supplied():
+    assert gui.esptool_args(None, "erase_flash") == ["--chip", "esp32c3", "erase_flash"]
+    assert gui.esptool_args("/dev/tty.button", "erase_flash") == [
+        "--chip",
+        "esp32c3",
+        "--port",
+        "/dev/tty.button",
+        "erase_flash",
+    ]
 
 
 def test_flash_board_flashes_firmware_before_application_files(tmp_path, monkeypatch):
