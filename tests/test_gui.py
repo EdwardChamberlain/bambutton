@@ -26,6 +26,43 @@ def test_web_setup_does_not_require_serial_port():
     assert gui.collect_basic_errors({"-WEB-": True}) == []
 
 
+def test_config_setup_requires_a_config_file_before_flashing():
+    assert gui.collect_basic_errors({"-CONFIG-": True}) == ["Choose a config.json file."]
+
+
+def test_update_action_states_disables_config_controls_in_web_mode(tmp_path):
+    class Element:
+        def __init__(self):
+            self.updates = []
+
+        def update(self, **kwargs):
+            self.updates.append(kwargs)
+
+    class Window:
+        def __init__(self):
+            self.elements = {key: Element() for key in ("-CONFIG_PATH-", "-CONFIG_BROWSE-", "-FLASH-")}
+
+        def __getitem__(self, key):
+            return self.elements[key]
+
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps({"wifi": {}}))
+    window = Window()
+
+    gui.update_action_states(window, {"-WEB-": True})
+    assert window.elements["-CONFIG_PATH-"].updates[-1] == {"disabled": True}
+    assert window.elements["-CONFIG_BROWSE-"].updates[-1] == {"disabled": True}
+    assert window.elements["-FLASH-"].updates[-1] == {"disabled": False}
+
+    gui.update_action_states(
+        window,
+        {"-CONFIG-": True, "-CONFIG_PATH-": str(config_path)},
+    )
+    assert window.elements["-CONFIG_PATH-"].updates[-1] == {"disabled": False}
+    assert window.elements["-CONFIG_BROWSE-"].updates[-1] == {"disabled": False}
+    assert window.elements["-FLASH-"].updates[-1] == {"disabled": False}
+
+
 def test_config_setup_requires_a_json_object(tmp_path):
     config_path = tmp_path / "saved-config.json"
     config_path.write_text(json.dumps({"wifi": {"ssid": "shop"}}))

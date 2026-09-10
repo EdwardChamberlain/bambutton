@@ -75,8 +75,8 @@ def build_window():
     sg.theme("LightBlue3")
     sg.set_options(
         font=("Helvetica", 11),
-        element_padding=(6, 5),
-        margins=(18, 18),
+        element_padding=(8, 6),
+        margins=(20, 20),
     )
 
     layout = [
@@ -92,12 +92,10 @@ def build_window():
                             key="-WEB-",
                             enable_events=True,
                             size=(24, 1),
-                            pad=(0, 5),
                         ),
                         sg.Text(
                             "Flash generic firmware, then configure the board in its web GUI.",
                             expand_x=True,
-                            pad=(12, 5),
                         ),
                     ],
                     [
@@ -107,16 +105,14 @@ def build_window():
                             key="-CONFIG-",
                             enable_events=True,
                             size=(24, 1),
-                            pad=(0, 5),
                         ),
                         sg.Text(
                             "Flash generic firmware with an existing config.json file.",
                             expand_x=True,
-                            pad=(12, 5),
                         ),
                     ],
                 ],
-                pad=(0, 8),
+                pad=(0, 4),
                 expand_x=True,
             )
         ],
@@ -126,19 +122,16 @@ def build_window():
                 [
                     [
                         sg.Text("config.json", size=(16, 1)),
-                        sg.Input(key="-CONFIG_PATH-", enable_events=True, visible=False, expand_x=True),
+                        sg.Input(key="-CONFIG_PATH-", enable_events=True, expand_x=True),
                         sg.FileBrowse(
                             "Browse",
                             key="-CONFIG_BROWSE-",
                             target="-CONFIG_PATH-",
                             file_types=(("JSON configuration", "*.json"), ("All files", "*.*")),
-                            visible=False,
                         ),
                     ],
                 ],
-                key="-CONFIG_FRAME-",
-                visible=False,
-                pad=(0, 8),
+                pad=(0, 4),
                 expand_x=True,
             )
         ],
@@ -153,22 +146,14 @@ def build_window():
                             disabled=True,
                             size=(12, 1),
                             expand_x=True,
-                            pad=(0, 6),
+                            pad=(0, 4),
                         )
                     ],
                     [
-                        sg.Text(
-                            "",
-                            key="-VALIDATION-",
-                            text_color="firebrick",
-                            size=(72, 2),
-                            expand_x=True,
-                            pad=(0, 8),
-                        )
+                        sg.Button("Exit", size=(12, 1), expand_x=True, pad=(0, 4))
                     ],
-                    [sg.Text("", expand_x=True), sg.Button("Exit", size=(12, 1), pad=(0, 6))],
                 ],
-                pad=(0, 8),
+                pad=(0, 4),
                 expand_x=True,
             )
         ],
@@ -183,13 +168,11 @@ def update_action_states(window, values):
     values = values or {}
     config_mode = values.get("-CONFIG-", False)
 
-    window["-CONFIG_FRAME-"].update(visible=config_mode)
-    window["-CONFIG_PATH-"].update(visible=config_mode)
-    window["-CONFIG_BROWSE-"].update(visible=config_mode)
+    window["-CONFIG_PATH-"].update(disabled=not config_mode)
+    window["-CONFIG_BROWSE-"].update(disabled=not config_mode)
 
     errors = collect_basic_errors(values)
     window["-FLASH-"].update(disabled=bool(errors))
-    window["-VALIDATION-"].update(errors[0] if errors else "")
 
 
 def collect_basic_errors(values):
