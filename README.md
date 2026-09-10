@@ -79,9 +79,12 @@ populate the printer selector from the configured API.
 
 Saving settings writes the board's `config.json` and restarts the firmware so
 changes such as a new Wi-Fi network or hostname take effect. The debug page
-shows current network and application state without exposing the API key or
-Wi-Fi password. The page is available only on the existing Wi-Fi network; the
-firmware does not create an access point.
+shows current network and application state without exposing the API key,
+Wi-Fi password, or web password. The page and all of its routes require HTTP
+Basic authentication using the password in the `web.password` setting. The
+default password is `bambutton`; change it from the configuration page or in
+`config.json` before relying on the web UI. The page is available only on the
+existing Wi-Fi network; the firmware does not create an access point.
 
 ## Setup Assistant GUI
 
@@ -161,6 +164,9 @@ Manual users can edit `micro/config.json` before copying the files to the board:
     "debounce_ms": 150,
     "pull": "down",
     "trigger": "rising"
+  },
+  "web": {
+    "password": "change-this-password"
   }
 }
 ```
