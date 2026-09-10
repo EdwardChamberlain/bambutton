@@ -66,15 +66,15 @@ def main():
 
 
 def build_window():
-    background_color = "#F4F6F8"
-    text_color = "#172033"
-    secondary_text_color = "#526070"
-    input_background_color = "#FFFFFF"
-    divider_color = "#D7DDE5"
+    background_color = "#181C23"
+    text_color = "#F3F4F6"
+    secondary_text_color = "#AAB4C3"
+    input_background_color = "#252B34"
+    divider_color = "#343B47"
     primary_button_color = "#2563EB"
-    secondary_button_color = "#E2E8F0"
+    secondary_button_color = "#2B313B"
 
-    sg.theme("System Default")
+    sg.theme("DarkGrey13")
     sg.theme_background_color(background_color)
     sg.theme_element_background_color(background_color)
     sg.theme_text_element_background_color(background_color)
@@ -83,9 +83,9 @@ def build_window():
     sg.theme_input_text_color(text_color)
     sg.theme_button_color(("#FFFFFF", primary_button_color))
     sg.set_options(
-        font=("Helvetica", 11),
-        element_padding=(6, 5),
-        margins=(24, 24),
+        font=("Helvetica", 10),
+        element_padding=(5, 4),
+        margins=(18, 16),
         use_ttk_buttons=True,
         ttk_theme="clam",
     )
@@ -94,7 +94,7 @@ def build_window():
         [
             sg.Text(
                 "Bambutton setup",
-                font=("Helvetica", 16, "bold"),
+                font=("Helvetica", 14, "bold"),
                 text_color=text_color,
                 pad=(0, (0, 2)),
             )
@@ -103,15 +103,15 @@ def build_window():
             sg.Text(
                 "Choose how to provision your board.",
                 text_color=secondary_text_color,
-                pad=(0, (0, 16)),
+                pad=(0, (0, 12)),
             )
         ],
         [
             sg.Text(
                 "SETUP MODE",
-                font=("Helvetica", 10, "bold"),
+                font=("Helvetica", 9, "bold"),
                 text_color=secondary_text_color,
-                pad=(0, (0, 6)),
+                pad=(0, (0, 4)),
             )
         ],
         [
@@ -125,7 +125,7 @@ def build_window():
                 text_color=text_color,
             ),
             sg.Text(
-                "Flash generic firmware, then configure the board in its web GUI.",
+                "Flash firmware, then configure in the web GUI.",
                 text_color=secondary_text_color,
                 expand_x=True,
             ),
@@ -140,20 +140,18 @@ def build_window():
                 text_color=text_color,
             ),
             sg.Text(
-                "Flash generic firmware with an existing config.json file.",
+                "Flash firmware with an existing config.json file.",
                 text_color=secondary_text_color,
                 expand_x=True,
             ),
         ],
-        [
-            sg.HorizontalSeparator(color=divider_color, pad=(0, (16, 14)))
-        ],
+        [sg.HorizontalSeparator(color=divider_color, pad=(0, (12, 10)))],
         [
             sg.Text(
                 "CONFIGURATION FILE",
-                font=("Helvetica", 10, "bold"),
+                font=("Helvetica", 9, "bold"),
                 text_color=secondary_text_color,
-                pad=(0, (0, 6)),
+                pad=(0, (0, 4)),
             )
         ],
         [
@@ -173,15 +171,13 @@ def build_window():
                 button_color=(text_color, secondary_button_color),
             ),
         ],
-        [
-            sg.HorizontalSeparator(color=divider_color, pad=(0, (16, 14)))
-        ],
+        [sg.HorizontalSeparator(color=divider_color, pad=(0, (12, 10)))],
         [
             sg.Text(
                 "FLASH",
-                font=("Helvetica", 10, "bold"),
+                font=("Helvetica", 9, "bold"),
                 text_color=secondary_text_color,
-                pad=(0, (0, 6)),
+                pad=(0, (0, 4)),
             )
         ],
         [
@@ -191,7 +187,7 @@ def build_window():
                 text_color=secondary_text_color,
                 expand_x=True,
                 justification="center",
-                pad=(0, (0, 12)),
+                pad=(0, (0, 8)),
             )
         ],
         [
@@ -199,21 +195,23 @@ def build_window():
                 "Flash",
                 key="-FLASH-",
                 disabled=True,
-                size=(12, 2),
+                size=(12, 1),
                 expand_x=True,
-                pad=(0, (0, 8)),
+                pad=(0, (0, 6)),
                 button_color=("#FFFFFF", primary_button_color),
-                font=("Helvetica", 11, "bold"),
+                mouseover_colors=("#FFFFFF", primary_button_color),
+                font=("Helvetica", 10, "bold"),
             )
         ],
         [
             sg.Button(
                 "Exit",
-                size=(12, 2),
+                size=(12, 1),
                 expand_x=True,
                 pad=(0, 0),
                 button_color=(text_color, secondary_button_color),
-                font=("Helvetica", 11, "bold"),
+                mouseover_colors=(text_color, secondary_button_color),
+                font=("Helvetica", 10, "bold"),
             )
         ],
     ]
