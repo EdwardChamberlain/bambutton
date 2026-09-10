@@ -5,9 +5,16 @@ try:
 except ImportError:
     import json
 
+try:
+    import ubinascii as _base64
+except ImportError:
+    import base64 as _base64
+
 
 CONFIG_PATH = "config.json"
 DEFAULT_HOSTNAME = "bambutton"
+DEFAULT_WEB_PASSWORD = "bambutton"
+WEB_AUTH_USERNAME = "admin"
 MAX_REQUEST_BYTES = 8192
 
 
@@ -64,9 +71,17 @@ class WebConfigServer:
         try:
             client, _address = self.listener.accept()
             client.settimeout(0.25)
-            method, path, body = _read_request(client)
-            status, content_type, response_body = self.handle_request(method, path, body)
-            _send_response(client, status, content_type, response_body)
+            method, path, body, headers = _read_request(client)
+            status, content_type, response_body = self.handle_request(
+                method,
+                path,
+                body,
+                headers,
+            )
+            response_headers = {}
+            if status == 401:
+                response_headers["WWW-Authenticate"] = 'Basic realm="Bambutton"'
+            _send_response(client, status, content_type, response_body, response_headers)
         except OSError:
             # A non-blocking listener reports no pending connection as OSError.
             # Request-level socket errors are also safe to ignore: the next
@@ -91,7 +106,13 @@ class WebConfigServer:
         self.restart_requested = False
         return restart_requested
 
-    def handle_request(self, method, path, body=""):
+    def handle_request(self, method, path, body="", headers=None):
+        if not self._is_authorized(headers or {}):
+            return 401, "text/html; charset=utf-8", _error_page(
+                "Authentication required",
+                "Enter the configured web password to access this board.",
+            )
+
         route = path.split("?", 1)[0]
 
         if method == "GET" and route in ("/", "/index.html"):
@@ -129,6 +150,16 @@ class WebConfigServer:
 
         return 404, "text/html; charset=utf-8", _error_page("Not found", "The requested page does not exist.")
 
+    def _is_authorized(self, headers):
+        configured_password = self.config.get("web", {}).get(
+            "password",
+            DEFAULT_WEB_PASSWORD,
+        )
+        if not configured_password:
+            configured_password = DEFAULT_WEB_PASSWORD
+        expected = _basic_auth_header(configured_password)
+        return headers.get("authorization", "").strip() == expected
+
     def _get_printers(self, form):
         if not form:
             return self.api.get_printers()
@@ -165,6 +196,7 @@ def build_config(form, current_config):
     printer = config.setdefault("printer", {})
     led = config.setdefault("led", {})
     button = config.setdefault("button", {})
+    web = config.setdefault("web", {})
 
     wifi["ssid"] = _required_text(form, "wifi_ssid", wifi.get("ssid", ""), "Wi-Fi SSID")
     wifi["password"] = _optional_secret(form, "wifi_password", wifi.get("password", ""))
@@ -197,6 +229,11 @@ def build_config(form, current_config):
         raise ValueError("LED pin and button pin must be different.")
     led["pin"] = led_pin
     button["pin"] = button_pin
+    web["password"] = _optional_secret(
+        form,
+        "web_password",
+        web.get("password", DEFAULT_WEB_PASSWORD) or DEFAULT_WEB_PASSWORD,
+    )
 
     return config
 
@@ -246,6 +283,11 @@ def render_config_page(config, message=""):
             <legend>Button hardware</legend>
             <label>LED pin <input name="led_pin" inputmode="numeric" value="__LED_PIN__" required></label>
             <label>Button pin <input name="button_pin" inputmode="numeric" value="__BUTTON_PIN__" required></label>
+          </fieldset>
+          <fieldset>
+            <legend>Web authentication</legend>
+            <p>Requests to this configuration server require this password. Leave it blank to keep the current password.</p>
+            <label>Web password <input type="password" name="web_password" placeholder="Leave blank to keep current"></label>
           </fieldset>
           <button type="submit">Save and restart</button>
         </form>
@@ -442,13 +484,14 @@ def _read_request(client):
     if len(body) != body_length:
         raise ValueError("Incomplete HTTP request body")
 
-    return request_line[0], request_line[1], body.decode("utf-8")
+    return request_line[0], request_line[1], body.decode("utf-8"), headers
 
 
-def _send_response(client, status, content_type, body):
+def _send_response(client, status, content_type, body, headers=None):
     status_text = {
         200: "OK",
         400: "Bad Request",
+        401: "Unauthorized",
         404: "Not Found",
         500: "Internal Server Error",
         502: "Bad Gateway",
@@ -459,8 +502,10 @@ def _send_response(client, status, content_type, body):
         "Content-Type: {}\r\n"
         "Content-Length: {}\r\n"
         "Connection: close\r\n"
-        "\r\n"
     ).format(status, status_text, content_type, len(payload)).encode("utf-8")
+    for key, value in (headers or {}).items():
+        response += "{}: {}\r\n".format(key, value).encode("utf-8")
+    response += b"\r\n"
     _send_all(client, response + payload)
 
 
@@ -533,3 +578,12 @@ def _escape_html(value):
         .replace('"', "&quot;")
         .replace("'", "&#x27;")
     )
+
+
+def _basic_auth_header(password):
+    credentials = (WEB_AUTH_USERNAME + ":" + str(password)).encode("utf-8")
+    if hasattr(_base64, "b2a_base64"):
+        encoded = _base64.b2a_base64(credentials).strip()
+    else:
+        encoded = _base64.b64encode(credentials)
+    return "Basic " + encoded.decode("ascii")

@@ -1,3 +1,4 @@
+import base64
 import json
 
 import pytest
@@ -21,6 +22,7 @@ def base_config():
         "printer": {"id": 1, "poll_interval_seconds": 3},
         "led": {"pin": 3, "flash_interval_ms": 250},
         "button": {"pin": 4, "debounce_ms": 150, "pull": "down", "trigger": "rising"},
+        "web": {"password": "old-web-password"},
     }
 
 
@@ -34,7 +36,13 @@ def valid_form():
         "printer_id": "7",
         "led_pin": "5",
         "button_pin": "6",
+        "web_password": "new-web-password",
     }
+
+
+def auth_headers(password="old-web-password"):
+    credentials = base64.b64encode(("admin:" + password).encode("utf-8")).decode("ascii")
+    return {"authorization": "Basic " + credentials}
 
 
 def test_parse_form_decodes_url_encoded_values():
@@ -83,6 +91,17 @@ def test_blank_secrets_keep_existing_values():
     assert updated["api"]["key"] == "old-key"
 
 
+def test_blank_web_password_keeps_existing_value_and_submitted_password_updates_it():
+    current = base_config()
+    form = valid_form()
+    form["web_password"] = ""
+
+    assert web_config.build_config(form, current)["web"]["password"] == "old-web-password"
+
+    form["web_password"] = "newer-web-password"
+    assert web_config.build_config(form, current)["web"]["password"] == "newer-web-password"
+
+
 @pytest.mark.parametrize(
     "field,value,error",
     [
@@ -115,6 +134,7 @@ def test_config_page_contains_form_and_does_not_require_formatting_js():
     assert 'action="/save"' in page
     assert 'name="hostname"' in page
     assert 'fetch("/api/printers", {' in page
+    assert 'name="web_password"' in page
     assert "__HOSTNAME__" not in page
 
 
@@ -123,7 +143,56 @@ def test_debug_page_does_not_expose_secrets():
 
     assert "old-password" not in page
     assert "old-key" not in page
+    assert "old-web-password" not in page
     assert "192.168.1.20" in page
+
+
+def test_all_routes_require_basic_authentication():
+    server = object.__new__(web_config.WebConfigServer)
+    server.config = base_config()
+    server.api = None
+    server.status_provider = lambda: {}
+    server.restart_requested = False
+
+    status, content_type, body = server.handle_request("GET", "/")
+
+    assert status == 401
+    assert content_type.startswith("text/html")
+    assert "Authentication required" in body
+
+
+def test_basic_authentication_allows_authenticated_requests():
+    server = object.__new__(web_config.WebConfigServer)
+    server.config = base_config()
+    server.api = None
+    server.status_provider = lambda: {}
+    server.restart_requested = False
+
+    status, content_type, body = server.handle_request(
+        "GET",
+        "/debug",
+        headers=auth_headers(),
+    )
+
+    assert status == 200
+    assert content_type.startswith("text/html")
+    assert "Bambutton debug information" in body
+
+
+def test_basic_authentication_rejects_wrong_password():
+    server = object.__new__(web_config.WebConfigServer)
+    server.config = base_config()
+    server.api = None
+    server.status_provider = lambda: {}
+    server.restart_requested = False
+
+    status, _, _ = server.handle_request(
+        "GET",
+        "/debug",
+        headers=auth_headers("wrong-password"),
+    )
+
+    assert status == 401
 
 
 def test_save_request_sets_restart_flag_and_returns_updated_page(tmp_path):
@@ -138,6 +207,7 @@ def test_save_request_sets_restart_flag_and_returns_updated_page(tmp_path):
         "POST",
         "/save",
         "&".join("{}={}".format(key, value) for key, value in valid_form().items()),
+        headers=auth_headers(),
     )
 
     assert status == 200
@@ -167,6 +237,7 @@ def test_printer_discovery_uses_submitted_api_settings():
         "POST",
         "/api/printers",
         "api_base_url=http%3A%2F%2Fnew-host%3A8000%2Fapi%2Fv1&api_key=new-key",
+        headers=auth_headers(),
     )
 
     assert status == 200

@@ -84,13 +84,16 @@ populate the printer selector from the configured API.
 Saving settings writes the board's `config.json` and restarts the firmware so
 changes such as a new Wi-Fi network or hostname take effect. The debug page
 shows current network and application state without exposing the API key or
-Wi-Fi password. If the board cannot connect to its configured Wi-Fi within the
-connection timeout, it starts a password-protected setup access point named
-`Bambutton-Setup` with password `bambutton`. Connect to that network and open
-`http://192.168.4.1/` to correct the Wi-Fi settings. Saving settings restarts
-the board so it can retry the configured network. The setup network's SSID and
-password can be changed in `wifi.ap_ssid` and `wifi.ap_password` before
-flashing the configuration.
+Wi-Fi password, or web password. All routes, including the setup access point,
+require HTTP Basic authentication using the password in `web.password`. The
+default password is `bambutton`; change it from the configuration page or in
+`config.json` before relying on the web UI. If the board cannot connect to its
+configured Wi-Fi within the connection timeout, it starts a password-protected
+setup access point named `Bambutton-Setup` with password `bambutton`. Connect
+to that network and open `http://192.168.4.1/` to correct the Wi-Fi settings.
+Saving settings restarts the board so it can retry the configured network. The
+setup network's SSID and password can be changed in `wifi.ap_ssid` and
+`wifi.ap_password` before flashing the configuration.
 
 ## Setup Assistant GUI
 
@@ -172,6 +175,9 @@ Manual users can edit `micro/config.json` before copying the files to the board:
     "debounce_ms": 150,
     "pull": "down",
     "trigger": "rising"
+  },
+  "web": {
+    "password": "change-this-password"
   }
 }
 ```

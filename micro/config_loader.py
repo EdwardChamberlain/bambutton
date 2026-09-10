@@ -32,6 +32,9 @@ DEFAULT_CONFIG = {
         "pull": "down",
         "trigger": "rising",
     },
+    "web": {
+        "password": "bambutton",
+    },
 }
 
 
