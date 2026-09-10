@@ -69,9 +69,11 @@ Key files:
 The firmware sets the board's network hostname to `bambutton` before connecting to Wi-Fi,
 so DHCP and mDNS-capable networks can identify it more easily.
 
-Wi-Fi connection timeouts apply to individual connection attempts. If the network is
-unavailable, the firmware keeps retrying every 10 seconds while the LED shows the
-connection-failure pattern.
+Wi-Fi connection timeouts apply to individual connection attempts. If the board
+cannot connect within the configured timeout, it starts the password-protected
+setup access point described below while the LED shows the connection-failure
+pattern. Saving settings restarts the firmware so it can retry the configured
+network.
 
 ## Web Configuration
 
