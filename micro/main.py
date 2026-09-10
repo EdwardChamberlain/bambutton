@@ -16,6 +16,17 @@ PRINTER_AWAITING_PLATE_CLEAR = False
 PENDING_BUTTON_PRESS = False
 CHAMBER_LIGHT_IS_ON = True
 PRINTER_STATUS_UPDATE_REQUIRED = True
+network = None
+
+
+def should_flash_led():
+    # Keep the connection failure indication active during boot, before the
+    # Wi-Fi helper has been created, and whenever the interface drops later.
+    if network is None or not network.is_connected():
+        return True
+
+    return PRINTER_AWAITING_PLATE_CLEAR and not PENDING_BUTTON_PRESS
+
 
 # Feed this only from the healthy main loop. If a network request or the
 # networking stack blocks, the board will reboot and reconnect from scratch.
@@ -24,9 +35,7 @@ watchdog = machine.WDT(timeout=60_000)
 # -- Initialize LED flasher ---
 flasher = led_flasher.LedFlasher(
     pin_number=config["led"]["pin"],
-    should_flash=lambda: (
-        PRINTER_AWAITING_PLATE_CLEAR and not PENDING_BUTTON_PRESS
-    ),
+    should_flash=should_flash_led,
     interval_ms=config["led"]["flash_interval_ms"],
     inactive_value=lambda: CHAMBER_LIGHT_IS_ON,
 )
@@ -68,7 +77,6 @@ try:
 
 except Exception as exc:
     print("Wi-Fi connection failed:", exc)
-    flasher.on()
     raise
 
 # -- Initialize API client --
