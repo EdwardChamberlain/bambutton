@@ -69,6 +69,12 @@ Key files:
 The firmware sets the board's network hostname to `bambutton` before connecting to Wi-Fi,
 so DHCP and mDNS-capable networks can identify it more easily.
 
+Wi-Fi connection timeouts apply to individual connection attempts. If the board
+cannot connect within the configured timeout, it starts the password-protected
+setup access point described below while the LED shows the connection-failure
+pattern. Saving settings restarts the firmware so it can retry the configured
+network.
+
 ## Web Configuration
 
 After the board joins its configured Wi-Fi network, open `http://bambutton/` or
@@ -80,11 +86,17 @@ populate the printer selector from the configured API.
 Saving settings writes the board's `config.json` and restarts the firmware so
 changes such as a new Wi-Fi network or hostname take effect. The debug page
 shows current network and application state without exposing the API key,
-Wi-Fi password, or web password. The page and all of its routes require HTTP
-Basic authentication using the password in the `web.password` setting. The
-default password is `bambutton`; change it from the configuration page or in
-`config.json` before relying on the web UI. The page is available only on the
-existing Wi-Fi network; the firmware does not create an access point.
+Wi-Fi password, or web password. All routes, including the setup access point,
+require HTTP Basic authentication using username `admin` and the password in
+`web.password`. The default username is `admin` and the default password is
+`bambutton`; change the password from the configuration page or in
+`config.json` before relying on the web UI. If the board cannot connect to its
+configured Wi-Fi within the connection timeout, it starts a password-protected
+setup access point named `Bambutton-Setup` with password `bambutton`. Connect
+to that network and open `http://192.168.4.1/` to correct the Wi-Fi settings.
+Saving settings restarts the board so it can retry the configured network. The
+setup network's SSID and password can be changed in `wifi.ap_ssid` and
+`wifi.ap_password` before flashing the configuration.
 
 ## Setup Assistant GUI
 
@@ -144,7 +156,9 @@ Manual users can edit `micro/config.json` before copying the files to the board:
   "wifi": {
     "ssid": "your-wifi-ssid",
     "password": "your-wifi-password",
-    "timeout_seconds": 10
+    "timeout_seconds": 10,
+    "ap_ssid": "Bambutton-Setup",
+    "ap_password": "bambutton"
   },
   "api": {
     "base_url": "http://your-server-ip:8000/api/v1",
@@ -292,7 +306,7 @@ Use GPIO numbers, not physical pin positions.
 - Do not feed 5V into an ESP32-C3 GPIO. ESP32-C3 GPIO is 3.3V logic.
 - If the button LED needs more current than a GPIO can safely provide, drive it through a transistor/MOSFET instead of directly from the GPIO.
 
-> Note: The LED state is tied to the printers chamber light state. Turning off the printer light turns off the standby light on the button!
+> Note: When Wi-Fi is unavailable, the LED blinks at twice the plate-clear alert rate to show the connection failure. When connected, its standby state is tied to the printer's chamber light state, so turning off the printer light turns off the standby light on the button.
 
 #### Power and USB:
 

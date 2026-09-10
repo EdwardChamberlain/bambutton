@@ -3,6 +3,15 @@ import time
 
 
 DEFAULT_HOSTNAME = "bambutton"
+RETRY_DELAY_SECONDS = 10
+DEFAULT_AP_SSID = "Bambutton-Setup"
+DEFAULT_AP_PASSWORD = "bambutton"
+STA_IF = getattr(network, "STA_IF", getattr(network.WLAN, "IF_STA", 0))
+AP_IF = getattr(network, "AP_IF", getattr(network.WLAN, "IF_AP", 1))
+
+
+class ConnectionTimeout(RuntimeError):
+    pass
 
 
 class WiFi:
@@ -15,6 +24,8 @@ class WiFi:
         connected_led_value=0,
         failed_led_value=1,
         hostname=DEFAULT_HOSTNAME,
+        ap_ssid=DEFAULT_AP_SSID,
+        ap_password=DEFAULT_AP_PASSWORD,
     ):
         self.ssid = ssid
         self.password = password
@@ -23,9 +34,12 @@ class WiFi:
         self.connected_led_value = connected_led_value
         self.failed_led_value = failed_led_value
         self.hostname = hostname or DEFAULT_HOSTNAME
-        self.wlan = network.WLAN(network.STA_IF)
+        self.ap_ssid = ap_ssid or DEFAULT_AP_SSID
+        self.ap_password = ap_password or DEFAULT_AP_PASSWORD
+        self.wlan = network.WLAN(STA_IF)
+        self.ap = None
 
-    def connect(self):
+    def connect(self, watchdog_feed=None):
         # Set this before activating the interface so DHCP and mDNS can use it.
         network.hostname(self.hostname)
         self.wlan.active(True)
@@ -35,37 +49,94 @@ class WiFi:
         if not self.wlan.isconnected():
             print("Connecting to Wi-Fi:", self.ssid)
             self.wlan.connect(self.ssid, self.password)
-            self._wait_for_connection()
+            self._wait_for_connection(watchdog_feed)
 
         self._set_led(self.connected_led_value)
         print("Connected to Wi-Fi")
         print("Network config:", self.wlan.ifconfig())
         return self.wlan
 
-    def ensure_connected(self):
+    def connect_forever(self, watchdog_feed=None):
+        while True:
+            try:
+                return self.connect(watchdog_feed=watchdog_feed)
+            except (ConnectionTimeout, OSError) as exc:
+                print("Wi-Fi connection failed:", exc)
+                self.disconnect()
+                self._sleep_before_retry(watchdog_feed)
+
+    def connect_with_fallback(self, watchdog_feed=None):
+        try:
+            return self.connect(watchdog_feed=watchdog_feed)
+        except (ConnectionTimeout, OSError) as exc:
+            print("Wi-Fi connection failed:", exc)
+            self.disconnect()
+            return self.start_access_point()
+
+    def ensure_connected(self, watchdog_feed=None, fallback_to_ap=False):
+        if self.is_ap_mode():
+            return self.ap
+
         if self.is_connected():
             return self.wlan
 
         print("Wi-Fi connection lost; reconnecting")
+        if fallback_to_ap:
+            return self.connect_with_fallback(watchdog_feed=watchdog_feed)
+        return self.connect_forever(watchdog_feed=watchdog_feed)
+
+    def disconnect(self):
         self.wlan.disconnect()
-        return self.connect()
 
     def is_connected(self):
+        if self.is_ap_mode():
+            return False
         return self.wlan.isconnected()
 
     def ifconfig(self):
+        if self.is_ap_mode():
+            return self.ap.ifconfig()
         return self.wlan.ifconfig()
 
-    def _wait_for_connection(self):
+    def is_ap_mode(self):
+        return self.ap is not None
+
+    def mode(self):
+        return "access point" if self.is_ap_mode() else "station"
+
+    def start_access_point(self):
+        self.wlan.active(False)
+        self.ap = network.WLAN(AP_IF)
+        self.ap.active(True)
+        self.ap.config(essid=self.ap_ssid, password=self.ap_password)
+        self._set_led(self.failed_led_value)
+        print("Wi-Fi setup access point:", self.ap_ssid)
+        print("Access point config:", self.ap.ifconfig())
+        return self.ap
+
+    def _wait_for_connection(self, watchdog_feed=None):
         started_at = time.ticks_ms()
 
         while not self.wlan.isconnected():
             if time.ticks_diff(time.ticks_ms(), started_at) > self.timeout_seconds * 1000:
                 self._set_led(self.failed_led_value)
-                raise RuntimeError("Wi-Fi connection timed out")
+                raise ConnectionTimeout("Wi-Fi connection timed out")
 
+            if watchdog_feed is not None:
+                watchdog_feed()
             self._toggle_led()
             time.sleep(0.25)
+
+    def _sleep_before_retry(self, watchdog_feed=None):
+        remaining_seconds = RETRY_DELAY_SECONDS
+
+        while remaining_seconds > 0:
+            if watchdog_feed is not None:
+                watchdog_feed()
+
+            sleep_seconds = min(1, remaining_seconds)
+            time.sleep(sleep_seconds)
+            remaining_seconds -= sleep_seconds
 
     def _toggle_led(self):
         if self.status_led:

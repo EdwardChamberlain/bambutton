@@ -19,11 +19,11 @@ MAX_REQUEST_BYTES = 8192
 
 
 class WebConfigServer:
-    """Small LAN-only configuration server for the MicroPython board.
+    """Small polled configuration server for the MicroPython board.
 
     The server is deliberately polled from the main loop instead of running a
     second thread. That keeps configuration writes and application state in one
-    execution context and avoids adding an AP or any extra runtime service.
+    execution context while the server is available on station or AP Wi-Fi.
     """
 
     def __init__(
@@ -258,7 +258,7 @@ def render_config_page(config, message=""):
 
     content = """
         <h1>Bambutton configuration</h1>
-        <p>Configure this board over the existing Wi-Fi network. Changes are saved to the board and applied after restart.</p>
+        <p>Configure this board over Wi-Fi. Changes are saved to the board and applied after restart.</p>
         __SAVED_MESSAGE__
         <form method="post" action="/save">
           <fieldset>
@@ -569,15 +569,6 @@ def _url_decode(value):
     return result.decode("utf-8")
 
 
-def _basic_auth_header(password):
-    credentials = (WEB_AUTH_USERNAME + ":" + str(password)).encode("utf-8")
-    if hasattr(_base64, "b2a_base64"):
-        encoded = _base64.b2a_base64(credentials).strip()
-    else:
-        encoded = _base64.b64encode(credentials)
-    return "Basic " + encoded.decode("ascii")
-
-
 def _escape_html(value):
     value = str(value)
     return (
@@ -587,3 +578,12 @@ def _escape_html(value):
         .replace('"', "&quot;")
         .replace("'", "&#x27;")
     )
+
+
+def _basic_auth_header(password):
+    credentials = (WEB_AUTH_USERNAME + ":" + str(password)).encode("utf-8")
+    if hasattr(_base64, "b2a_base64"):
+        encoded = _base64.b2a_base64(credentials).strip()
+    else:
+        encoded = _base64.b64encode(credentials)
+    return "Basic " + encoded.decode("ascii")
