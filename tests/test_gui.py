@@ -42,7 +42,13 @@ def test_update_action_states_disables_config_controls_in_web_mode(tmp_path):
         def __init__(self):
             self.elements = {
                 key: Element()
-                for key in ("-CONFIG_PATH-", "-CONFIG_BROWSE-", "-FLASH-", "-STATUS-")
+                for key in (
+                    "-CONFIG_PATH-",
+                    "-CONFIG_BROWSE-",
+                    "-SAVE_EXAMPLE-",
+                    "-FLASH-",
+                    "-STATUS-",
+                )
             }
 
         def __getitem__(self, key):
@@ -55,6 +61,7 @@ def test_update_action_states_disables_config_controls_in_web_mode(tmp_path):
     gui.update_action_states(window, {"-WEB-": True})
     assert window.elements["-CONFIG_PATH-"].updates[-1] == {"disabled": True}
     assert window.elements["-CONFIG_BROWSE-"].updates[-1] == {"disabled": True}
+    assert window.elements["-SAVE_EXAMPLE-"].updates[-1] == {"disabled": True}
     assert window.elements["-FLASH-"].updates[-1] == {"disabled": False}
     assert window.elements["-STATUS-"].updates[-1] == {"value": "Ready"}
 
@@ -64,6 +71,7 @@ def test_update_action_states_disables_config_controls_in_web_mode(tmp_path):
     )
     assert window.elements["-CONFIG_PATH-"].updates[-1] == {"disabled": False}
     assert window.elements["-CONFIG_BROWSE-"].updates[-1] == {"disabled": False}
+    assert window.elements["-SAVE_EXAMPLE-"].updates[-1] == {"disabled": False}
     assert window.elements["-FLASH-"].updates[-1] == {"disabled": False}
     assert window.elements["-STATUS-"].updates[-1] == {"value": "Ready"}
 
@@ -80,7 +88,13 @@ def test_update_action_states_prompts_for_config_file():
         def __init__(self):
             self.elements = {
                 key: Element()
-                for key in ("-CONFIG_PATH-", "-CONFIG_BROWSE-", "-FLASH-", "-STATUS-")
+                for key in (
+                    "-CONFIG_PATH-",
+                    "-CONFIG_BROWSE-",
+                    "-SAVE_EXAMPLE-",
+                    "-FLASH-",
+                    "-STATUS-",
+                )
             }
 
         def __getitem__(self, key):
@@ -96,6 +110,65 @@ def test_update_action_states_prompts_for_config_file():
     }
 
 
+def test_save_example_config_copies_template(tmp_path, monkeypatch):
+    example_path = tmp_path / "config_example.json"
+    example_path.write_text('{"wifi": {"ssid": "example"}}')
+    target_path = tmp_path / "saved" / "config.json"
+    target_path.parent.mkdir()
+
+    monkeypatch.setattr(gui, "CONFIG_EXAMPLE_PATH", example_path)
+
+    assert gui.save_example_config(target_path) == target_path
+    assert target_path.read_text() == example_path.read_text()
+
+
+def test_handle_save_example_config_populates_path(tmp_path, monkeypatch):
+    class Element:
+        def __init__(self):
+            self.updates = []
+
+        def update(self, **kwargs):
+            self.updates.append(kwargs)
+
+    class Window:
+        def __init__(self):
+            self.elements = {
+                key: Element()
+                for key in (
+                    "-CONFIG_PATH-",
+                    "-CONFIG_BROWSE-",
+                    "-SAVE_EXAMPLE-",
+                    "-FLASH-",
+                    "-STATUS-",
+                )
+            }
+
+        def __getitem__(self, key):
+            return self.elements[key]
+
+    example_path = tmp_path / "config_example.json"
+    example_path.write_text('{"wifi": {"ssid": "example"}}')
+    target_path = tmp_path / "config.json"
+    window = Window()
+
+    monkeypatch.setattr(gui, "CONFIG_EXAMPLE_PATH", example_path)
+    monkeypatch.setattr(
+        gui.sg,
+        "popup_get_file",
+        lambda *args, **kwargs: str(target_path),
+        raising=False,
+    )
+
+    gui.handle_save_example_config(window, {})
+
+    assert target_path.read_text() == example_path.read_text()
+    assert {"value": str(target_path)} in window.elements["-CONFIG_PATH-"].updates
+    assert window.elements["-STATUS-"].updates[-1] == {
+        "value": "Example config saved; edit it before flashing."
+    }
+    assert window.elements["-FLASH-"].updates[-1] == {"disabled": False}
+
+
 def test_handle_flash_shows_progress_before_flashing(tmp_path, monkeypatch):
     class Element:
         def __init__(self):
@@ -108,7 +181,13 @@ def test_handle_flash_shows_progress_before_flashing(tmp_path, monkeypatch):
         def __init__(self):
             self.elements = {
                 key: Element()
-                for key in ("-CONFIG_PATH-", "-CONFIG_BROWSE-", "-FLASH-", "-STATUS-")
+                for key in (
+                    "-CONFIG_PATH-",
+                    "-CONFIG_BROWSE-",
+                    "-SAVE_EXAMPLE-",
+                    "-FLASH-",
+                    "-STATUS-",
+                )
             }
             self.refresh_calls = 0
 

@@ -21,6 +21,7 @@ else:
     RESOURCE_ROOT = SOURCE_ROOT if (SOURCE_ROOT / "micro").exists() else PACKAGE_ROOT
 
 MICRO_DIR = RESOURCE_ROOT / "micro"
+CONFIG_EXAMPLE_PATH = MICRO_DIR / "config_example.json"
 DEFAULT_FIRMWARE_DIR = RESOURCE_ROOT / "firmware"
 FIRMWARE_RESTART_DELAY_SECONDS = 2
 
@@ -59,6 +60,9 @@ def main():
 
             if event in ("-WEB-", "-CONFIG-", "-CONFIG_PATH-", "-CONFIG_BROWSE-"):
                 update_action_states(window, values)
+
+            if event == "-SAVE_EXAMPLE-":
+                handle_save_example_config(window, values)
 
             if event == "-FLASH-":
                 handle_flash(window, values)
@@ -146,6 +150,18 @@ def build_window():
                 expand_x=True,
             ),
         ],
+        [
+            sg.Text("", size=(16, 1)),
+            sg.Button(
+                "Save example config...",
+                key="-SAVE_EXAMPLE-",
+                size=(24, 1),
+                button_color=(text_color, secondary_button_color),
+                mouseover_colors=(text_color, secondary_button_color),
+                font=("Helvetica", 10),
+                pad=(0, (2, 0)),
+            ),
+        ],
         [sg.HorizontalSeparator(color=divider_color, pad=(0, (12, 10)))],
         [
             sg.Text(
@@ -211,6 +227,34 @@ def build_window():
     return window
 
 
+def handle_save_example_config(window, values):
+    target = sg.popup_get_file(
+        "Save example configuration",
+        title="Save example configuration",
+        default_path="config.json",
+        default_extension=".json",
+        save_as=True,
+        file_types=(("JSON configuration", "*.json"), ("All files", "*.*")),
+    )
+    if not target:
+        return
+
+    try:
+        target_path = save_example_config(target)
+    except (OSError, ValueError) as exc:
+        window["-STATUS-"].update(value="Could not save the example config.")
+        sg.popup_error("Could not save example configuration", str(exc))
+        return
+
+    window["-CONFIG_PATH-"].update(value=str(target_path))
+    window["-STATUS-"].update(value="Example config saved; edit it before flashing.")
+    update_action_states(
+        window,
+        {"-CONFIG-": True, "-CONFIG_PATH-": str(target_path)},
+        update_status=False,
+    )
+
+
 def handle_flash(window, values):
     window["-FLASH-"].update(disabled=True)
     window["-STATUS-"].update(value="Flashing...")
@@ -236,6 +280,7 @@ def update_action_states(window, values, update_status=True):
 
     window["-CONFIG_PATH-"].update(disabled=not config_mode)
     window["-CONFIG_BROWSE-"].update(disabled=not config_mode)
+    window["-SAVE_EXAMPLE-"].update(disabled=not config_mode)
 
     errors = collect_basic_errors(values)
     window["-FLASH-"].update(disabled=bool(errors))
@@ -255,6 +300,15 @@ def collect_basic_errors(values):
             errors.append(str(exc))
 
     return errors
+
+
+def save_example_config(path):
+    target_path = Path(path).expanduser()
+    if target_path.suffix.lower() != ".json":
+        raise ValueError("Example configuration must end in .json.")
+
+    target_path.write_bytes(CONFIG_EXAMPLE_PATH.read_bytes())
+    return target_path
 
 
 def config_path_for_mode(values):
